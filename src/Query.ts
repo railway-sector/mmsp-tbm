@@ -48,14 +48,12 @@ export async function segmentedLengthData(contractP: any, tunnelL: any) {
 
   if (contractP && tunnelL) {
     query.where = qAll + " AND " + query_segmentLength;
-  } else {
-    query.where = qContractp + " AND " + query_segmentLength;
   }
 
   return tbmTunnelLayer.queryFeatures(query).then((response: any) => {
     var stats = response.features[0].attributes;
     const segmented_length = stats["SegmentLength"];
-    return [segmented_length];
+    return segmented_length;
   });
 }
 

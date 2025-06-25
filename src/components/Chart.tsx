@@ -38,7 +38,7 @@ const Chart = () => {
   const [chartData, setChartData] = useState([]);
   const [cutterHeadPositionNo, setCutterHeadPositionNo] = useState([]);
 
-  const [segmentedLength, setSegementedLength] = useState([]);
+  const [segmentedLength, setSegementedLength] = useState(null);
 
   const chartID = "gauge-bar";
 
@@ -49,7 +49,7 @@ const Chart = () => {
       }
     );
 
-    zoomToLayer(tbmTunnelLayer, arcgisScene);
+    // zoomToLayer(tbmTunnelLayer, arcgisScene);
 
     cutterHeadPositionData(contractpackages, segmentlines).then(
       (response: any) => {
@@ -62,7 +62,8 @@ const Chart = () => {
     // Segmented Length
     segmentedLengthData(contractpackages, segmentlines).then(
       (response: any) => {
-        console.log(response);
+        // console.log(response === 0);
+        console.log(response === null);
         setSegementedLength(response);
       }
     );
@@ -123,7 +124,7 @@ const Chart = () => {
         x: am5.percent(50),
         centerX: am5.percent(50),
         y: am5.percent(65),
-        centerY: am5.percent(100),
+        centerY: am5.percent(80),
       })
     );
 
@@ -398,12 +399,12 @@ const Chart = () => {
             >
               Segmented Length
             </dt>{" "}
-            {segmentlines === undefined ||
-            cutterHeadPositionNo[0] === undefined ? (
+            {segmentedLength === null ? (
               <dd
                 style={{
-                  fontSize: "1.5rem",
-                  color: "white",
+                  fontSize: "2.5rem",
+                  fontWeight: "bold",
+                  color: "#00C3FF",
                   paddingTop: "5px",
                 }}
               >
@@ -425,7 +426,10 @@ const Chart = () => {
                     paddingLeft: "10px",
                   }}
                 >
-                  {thousands_separators(segmentedLength[0])} m
+                  {segmentedLength === 0
+                    ? segmentedLength
+                    : thousands_separators(segmentedLength)}{" "}
+                  m
                 </span>
               </dd>
             )}
