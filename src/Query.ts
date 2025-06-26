@@ -1,4 +1,9 @@
-import { cutterHeadSpotLayer, dateTable, tbmTunnelLayer } from "./layers";
+import {
+  cutterHeadSpotLayer,
+  dateTable,
+  tbmTunnelLayer,
+  tbmTunnelSegmentedLengthLayer,
+} from "./layers";
 import StatisticDefinition from "@arcgis/core/rest/support/StatisticDefinition";
 import SpatialReference from "@arcgis/core/geometry/SpatialReference";
 import { IconSymbol3DLayer, PointSymbol3D } from "@arcgis/core/symbols";
@@ -38,23 +43,26 @@ export async function dateUpdate() {
   });
 }
 
-export async function segmentedLengthData(contractP: any, tunnelL: any) {
-  var query = tbmTunnelLayer.createQuery();
-  const query_segmentLength = "SegmentNo = 1";
+export async function segmentedLengthData(tunnelL: any) {
+  var query = tbmTunnelSegmentedLengthLayer.createQuery();
+  query.outFields = ["line", "SegmentLength", "Package"];
 
-  const qContractp = "Package = '" + contractP + "'";
+  const query_segmentLength = "segmentno = 1";
   const qTunnel = "line = '" + tunnelL + "'";
-  const qAll = qContractp + " AND " + qTunnel;
 
-  if (contractP && tunnelL) {
-    query.where = qAll + " AND " + query_segmentLength;
+  if (!tunnelL) {
+    query.where = query_segmentLength;
+  } else if (tunnelL) {
+    query.where = qTunnel + " AND " + query_segmentLength;
   }
 
-  return tbmTunnelLayer.queryFeatures(query).then((response: any) => {
-    var stats = response.features[0].attributes;
-    const segmented_length = stats["SegmentLength"];
-    return segmented_length;
-  });
+  return tbmTunnelSegmentedLengthLayer
+    .queryFeatures(query)
+    .then((response: any) => {
+      var stats = response.features[0].attributes;
+      const segmented_length = stats["SegmentLength"];
+      return !tunnelL ? null : segmented_length;
+    });
 }
 
 export async function generateTbmTunnelData(contractP: any, tunnelL: any) {

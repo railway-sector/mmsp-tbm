@@ -60,13 +60,9 @@ const Chart = () => {
     tbmCutterHeadSpotData(contractpackages, segmentlines);
 
     // Segmented Length
-    segmentedLengthData(contractpackages, segmentlines).then(
-      (response: any) => {
-        // console.log(response === 0);
-        console.log(response === null);
-        setSegementedLength(response);
-      }
-    );
+    segmentedLengthData(segmentlines).then((response: any) => {
+      setSegementedLength(response);
+    });
   }, [contractpackages, segmentlines]);
 
   const chartTitleColor = am5.color("#d4ff33"); // yellow green

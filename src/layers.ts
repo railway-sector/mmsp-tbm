@@ -495,8 +495,9 @@ export const tbmTunnelLayer = new FeatureLayer({
     mode: "absolute-height",
     offset: -2,
   },
-  // hasZ: true,
+  hasZ: true,
   //definitionExpression: "Package = 'CP101'",
+  // outFields: ["segmentno", "line", "SegmentLength", "Package", "status"],
   renderer: tbmStatusRenderer,
   title: "TBM Segment",
   popupTemplate: {
@@ -504,6 +505,17 @@ export const tbmTunnelLayer = new FeatureLayer({
     lastEditInfoEnabled: false,
   },
 });
+
+export const tbmTunnelSegmentedLengthLayer = new FeatureLayer({
+  portalItem: {
+    id: "518e9321de7745f68b34e48d54cce5fb",
+    portal: {
+      url: "https://gis.railway-sector.com/portal",
+    },
+  },
+  definitionExpression: "segmentno = 1",
+});
+tbmTunnelSegmentedLengthLayer.listMode = "hide";
 
 export const cutterHeadSpotLayer = new GraphicsLayer({
   title: "Cutter Head Position",
