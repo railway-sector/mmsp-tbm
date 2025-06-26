@@ -517,6 +517,16 @@ export const tbmTunnelSegmentedLengthLayer = new FeatureLayer({
 });
 tbmTunnelSegmentedLengthLayer.listMode = "hide";
 
+export const tbmTunnelForZoomLayer = new FeatureLayer({
+  portalItem: {
+    id: "80d221702f5b4e73b7992aedeec9e2fc",
+    portal: {
+      url: "https://gis.railway-sector.com/portal",
+    },
+  },
+});
+tbmTunnelForZoomLayer.listMode = "hide";
+
 export const cutterHeadSpotLayer = new GraphicsLayer({
   title: "Cutter Head Position",
 });

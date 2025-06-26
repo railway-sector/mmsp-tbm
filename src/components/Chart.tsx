@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, use } from "react";
-import { tbmTunnelLayer } from "../layers";
+import { tbmTunnelForZoomLayer, tbmTunnelLayer } from "../layers";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import * as am5radar from "@amcharts/amcharts5/radar";
@@ -49,7 +49,12 @@ const Chart = () => {
       }
     );
 
-    // zoomToLayer(tbmTunnelLayer, arcgisScene);
+    if (segmentlines) {
+      tbmTunnelForZoomLayer.definitionExpression =
+        "line = '" + segmentlines + "'";
+    }
+
+    zoomToLayer(tbmTunnelForZoomLayer, arcgisScene);
 
     cutterHeadPositionData(contractpackages, segmentlines).then(
       (response: any) => {
