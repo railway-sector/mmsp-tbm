@@ -34,6 +34,7 @@ function MapDisplay() {
       arcgisScene.map.ground.opacity = 0.7;
       arcgisScene.view.environment.atmosphereEnabled = false;
       arcgisScene.map.ground.navigationConstraint = "none";
+      arcgisScene.view.ui.components = [];
     }
   });
 
@@ -49,8 +50,8 @@ function MapDisplay() {
         setSceneView(event.target);
       }}
     >
-      <arcgis-compass position="top-right"></arcgis-compass>
-      <arcgis-zoom position="bottom-right"></arcgis-zoom>
+      <arcgis-compass slot="top-right"></arcgis-compass>
+      <arcgis-zoom slot="bottom-right"></arcgis-zoom>
     </arcgis-scene>
   );
 }
