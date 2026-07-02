@@ -1,56 +1,51 @@
-import { useState, use } from "react";
+import { useState } from "react";
 import Select from "react-select";
 import "../index.css";
-import { dropdownDataObject, initialDropdownObject } from "../uniqueValues";
-import { MyContext } from "../contexts/MyContext";
+import { dropdownDataObject, defaultList } from "../uniqueValues";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { locationKeys } from "../interfaceKeys";
+import type { SelectedLocation } from "../interfaceKeys";
 
 export default function DropdownData() {
-  const { updateContractpackages, updateSegmentlines } = use(MyContext);
+  const queryClient = useQueryClient();
+  const [cpSelected, setCpSelected] = useState<null | any>(defaultList);
+  const [lineSelected, setLineSelected] = useState<null | any>(null);
+  const [lineList, setLineList] = useState<null | undefined | any>(
+    defaultList.field2,
+  );
 
-  // For dropdown filter
-  const [contractPackage, setConstractPackage] = useState<null | any>(
-    initialDropdownObject,
-  );
-  const [tunnelLine, setTunnelLine] = useState<null | any>(null);
-  const [tunnelLineList, setTunnelLineList] = useState<null | undefined | any>(
-    initialDropdownObject.field2,
-  );
+  const { data: cplist } = useQuery<any>({
+    queryKey: ["dropdownData"], // Do not add lotLayer as a dependency. The dropdown list will not be updated properly.
+    queryFn: async () => {
+      return dropdownDataObject;
+    },
+    // staleTime: Infinity, // never refetch in the backround on its own.
+  });
+
+  function updateDropdownListValues(
+    cp_obj_field: SelectedLocation["cpackage"],
+    line_obj_field: SelectedLocation["segline"],
+  ) {
+    return queryClient.setQueryData<SelectedLocation>(locationKeys.selected, {
+      cpackage: cp_obj_field,
+      segline: line_obj_field,
+    });
+  }
 
   // handle change event of the Municipality dropdown
   const handleContractPackageChange = (obj: any) => {
-    setConstractPackage(obj);
-    setTunnelLineList(obj.field2);
-    setTunnelLine(null);
-    updateContractpackages(obj.field1);
-    updateSegmentlines(undefined);
+    updateDropdownListValues(obj.field1, undefined);
+    setCpSelected(obj);
+    setLineList(obj.field2);
+    setLineSelected(null);
   };
 
-  // handle change event of the segmentLine dropdownff
+  // handle change event of the segmentLine dropdown
   const handleSegmentLineChange = (obj: any) => {
-    setTunnelLine(obj);
-    updateSegmentlines(obj.name);
+    updateDropdownListValues(cpSelected?.field1, obj.name);
+    setLineSelected(obj);
   };
 
-  return (
-    <>
-      <DropdownListDisplay
-        handleContractPackageChange={handleContractPackageChange}
-        handleSegmentLineChange={handleSegmentLineChange}
-        contractPackage={contractPackage}
-        segmentLine={tunnelLine}
-        segmentLineList={tunnelLineList}
-      ></DropdownListDisplay>
-    </>
-  );
-}
-
-export function DropdownListDisplay({
-  handleContractPackageChange,
-  handleSegmentLineChange,
-  contractPackage,
-  segmentLine,
-  segmentLineList,
-}: any) {
   // Style CSS
   const customstyles = {
     option: (styles: any, { isFocused, isSelected }: any) => {
@@ -100,8 +95,8 @@ export function DropdownListDisplay({
 
       <Select
         placeholder="Select Contract Package"
-        value={contractPackage}
-        options={dropdownDataObject}
+        value={cpSelected}
+        options={Array.isArray(cplist) ? cplist : []}
         onChange={handleContractPackageChange}
         getOptionLabel={(x: any) => x.field1}
         styles={customstyles}
@@ -120,8 +115,8 @@ export function DropdownListDisplay({
       </div>
       <Select
         placeholder="Select Segment Line"
-        value={segmentLine}
-        options={segmentLineList}
+        value={lineSelected}
+        options={lineList && lineList}
         onChange={handleSegmentLineChange}
         getOptionLabel={(x: any) => x.name}
         styles={customstyles}

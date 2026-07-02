@@ -1,3 +1,5 @@
+export type statisticsType = "count" | "sum";
+
 export const cp_field = "Package";
 export const line_field = "line";
 
@@ -35,7 +37,7 @@ export const cp108_field2 = cp108.map((line: any) => {
   return { name: line };
 });
 
-export const initialDropdownObject = {
+export const defaultList: any = {
   field1: "CP101",
   field2: cp101_field2,
 };

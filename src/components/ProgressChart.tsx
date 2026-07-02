@@ -1,62 +1,52 @@
-import { useRef, useState, useEffect, use } from "react";
+import { useRef, useEffect } from "react";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
-import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
-import am5themes_Responsive from "@amcharts/amcharts5/themes/Responsive";
 import { queryDefinitionExpression, timeSeriesChartData } from "../Query";
-import { MyContext } from "../contexts/MyContext";
+import { useQuery } from "@tanstack/react-query";
+import { locationKeys } from "../interfaceKeys";
+import type { SelectedLocation } from "../interfaceKeys";
 import { queryc2, tbmTunnelLayer } from "../layers";
-
-// Dispose function
-function maybeDisposeRoot(divId: any) {
-  am5.array.each(am5.registry.rootElements, function (root) {
-    if (root.dom.id === divId) {
-      root.dispose();
-    }
-  });
-}
+import { rootSetter } from "../chartSetter";
 
 const ProgressChart = () => {
-  const { contractpackages, segmentlines } = use(MyContext);
+  // const { contractpackages, segmentlines } = use(MyContext);
   const barSeriesRef = useRef<unknown | any | undefined>({});
   const legendRef = useRef<unknown | any | undefined>({});
   const xAxisRef = useRef<unknown | any | undefined>({});
   const yAxisRef = useRef<unknown | any | undefined>({});
   const chartRef = useRef<unknown | any | undefined>({});
-  const [progressData, setProgressData] = useState([]);
-
   const chartID = "progress-bar";
+
+  //--- Location state
+  const { data: selectedLocation } = useQuery<SelectedLocation | any>({
+    queryKey: locationKeys.selected,
+    queryFn: async () => ({}),
+    staleTime: Infinity,
+  });
+  const cpackage = selectedLocation?.cpackage;
+  const segline = selectedLocation?.segline;
+
+  const { data } = useQuery<any>({
+    queryKey: [cpackage, segline, tbmTunnelLayer],
+    queryFn: async () => {
+      queryc2.qValues = [cpackage, segline];
+      queryDefinitionExpression({
+        queryExpression: queryc2.queryExpression(),
+        featureLayer: [tbmTunnelLayer],
+      });
+
+      const qe = `${queryc2.queryExpression()} AND enddate IS NOT NULL`;
+      const chartData = await timeSeriesChartData(qe);
+
+      return {
+        chartData: chartData || [],
+      };
+    },
+  });
+  const chartData = data?.chartData || [];
+
   useEffect(() => {
-    //-- Query definition expression for progress chart--//
-    queryc2.qValues = [contractpackages, segmentlines];
-    queryDefinitionExpression({
-      queryExpression: queryc2.queryExpression(),
-      featureLayer: [tbmTunnelLayer],
-    });
-
-    //-- Query time-series data for progress chart--//
-    timeSeriesChartData(
-      `${queryc2.queryExpression()} AND enddate IS NOT NULL`,
-    ).then((result: any) => {
-      setProgressData(result);
-    });
-  }, [contractpackages, segmentlines]);
-
-  useEffect(() => {
-    maybeDisposeRoot(chartID);
-    const root = am5.Root.new(chartID);
-    root.container.children.clear();
-    root._logo?.dispose();
-
-    // Set themesf
-    // https://www.amcharts.com/docs/v5/concepts/themes/
-    root.setThemes([
-      am5themes_Animated.new(root),
-      am5themes_Responsive.new(root),
-    ]);
-
-    // Create chart
-    // https://www.amcharts.com/docs/v5/charts/xy-chart/
+    const root = rootSetter({ chartID: chartID });
     const chart = root.container.children.push(
       am5xy.XYChart.new(root, {
         panX: false,
@@ -83,8 +73,6 @@ const ProgressChart = () => {
       }),
     );
 
-    // Add cursor
-    // https://www.amcharts.com/docs/v5/charts/xy-chart/cursor/
     const cursor = chart.set(
       "cursor",
       am5xy.XYCursor.new(root, {
@@ -210,7 +198,7 @@ const ProgressChart = () => {
       tooltipY: am5.percent(10),
       strokeOpacity: 0,
     });
-    series.data.setAll(progressData);
+    series.data.setAll(chartData);
     series.appear(1000);
 
     // Add Label bullet
@@ -235,13 +223,13 @@ const ProgressChart = () => {
     return () => {
       root.dispose();
     };
-  }, [chartID, progressData]);
+  }, [chartID, chartData]);
 
   useEffect(() => {
-    barSeriesRef.current?.data.setAll(progressData);
+    barSeriesRef.current?.data.setAll(chartData);
 
-    xAxisRef.current?.data.setAll(progressData);
-    yAxisRef.current?.data.setAll(progressData);
+    xAxisRef.current?.data.setAll(chartData);
+    yAxisRef.current?.data.setAll(chartData);
   });
 
   return (

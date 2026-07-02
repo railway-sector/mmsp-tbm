@@ -16,9 +16,11 @@ import {
   alignmentGroupLayer,
 } from "../layers";
 import "@esri/calcite-components/dist/components/calcite-button";
+import { useState } from "react";
 
 function MapDisplay() {
   const arcgisScene = document.querySelector("arcgis-scene");
+  const [_mapView, setMapView] = useState<any>();
 
   arcgisScene?.viewOnReady(() => {
     arcgisScene?.map?.add(alignmentGroupLayer);
@@ -44,6 +46,9 @@ function MapDisplay() {
       viewingMode="local"
       zoom={13}
       center="121.0322874, 14.6750462"
+      onarcgisViewReadyChange={(event: any) => {
+        setMapView(event.target.id);
+      }}
     >
       <arcgis-compass slot="top-right"></arcgis-compass>
       <arcgis-zoom slot="bottom-right"></arcgis-zoom>

@@ -8,6 +8,7 @@ import Graphic from "@arcgis/core/Graphic";
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 import Query from "@arcgis/core/rest/support/Query";
 import * as am5 from "@amcharts/amcharts5";
+import type { statisticsType } from "./uniqueValues";
 
 // Updat date
 export async function dateUpdate() {
@@ -74,48 +75,23 @@ export function queryDefinitionExpression({
   }
 }
 
-export async function totalFieldCount({
-  qChart,
-  layer,
-  idField,
-}: statusDataType) {
-  const statsCollect = new StatisticDefinition({
-    onStatisticField: idField,
-    outStatisticFieldName: "statsCollect",
-    statisticType: "count",
-  });
-
-  //--- Query
-  const query = new Query();
-  query.outStatistics = [statsCollect];
-  query.where = qChart;
-
-  return layer?.queryFeatures(query).then((response: any) => {
-    return response.features[0].attributes.statsCollect;
-  });
-}
-
-interface statusDataType {
+interface fieldStatisticType {
   qChart: any;
   layer: any;
-  statusList?: any;
-  statusColor?: any;
-  statusField?: any;
-  idField?: any;
-  valueSumField?: any;
-  queryField?: any;
-  statisticType?: "count" | "sum";
+  statisticField: any;
+  statisticType: statisticsType;
 }
 
-export async function totalFieldSum({
+export async function fieldStatistic({
   qChart,
   layer,
-  valueSumField,
-}: statusDataType) {
+  statisticField,
+  statisticType,
+}: fieldStatisticType) {
   const statsCollect = new StatisticDefinition({
-    onStatisticField: valueSumField,
+    onStatisticField: statisticField,
     outStatisticFieldName: "statsCollect",
-    statisticType: "sum",
+    statisticType: statisticType,
   });
 
   //--- Query
@@ -147,6 +123,7 @@ export async function cutterHeadPositionData(queryExpression: any) {
 //---------------------------------------------------------//
 //    Cutter head spot data and time series chart data     //
 //---------------------------------------------------------//
+
 const spatialReference = SpatialReference.WebMercator;
 export async function tbmCutterHeadSpotData0(queryExpression: any) {
   cutterHeadSpotLayer.removeAll();
@@ -155,53 +132,51 @@ export async function tbmCutterHeadSpotData0(queryExpression: any) {
   query.groupByFieldsForStatistics = ["line"];
   query.where = queryExpression;
 
-  return tbmTunnelLayer.queryFeatures(query).then((response: any) => {
-    const stats = response.features;
-    stats.forEach((result: any) => {
-      const vertex = result.geometry.paths[0];
-      const long = (vertex[0][0] + vertex[1][0]) / 2;
-      const lat = (vertex[0][1] + vertex[1][1]) / 2;
+  const response = await tbmTunnelLayer.queryFeatures(query);
+  response.features.forEach((result: any) => {
+    const vertex = result.geometry.paths[0];
+    const long = (vertex[0][0] + vertex[1][0]) / 2;
+    const lat = (vertex[0][1] + vertex[1][1]) / 2;
 
-      const point: any = {
-        spatialReference: spatialReference,
-        type: "point",
-        x: long,
-        y: lat,
-        z: 5,
-      };
+    const point: any = {
+      spatialReference: spatialReference,
+      type: "point",
+      x: long,
+      y: lat,
+      z: 5,
+    };
 
-      const symbol = new PointSymbol3D({
-        symbolLayers: [
-          new IconSymbol3DLayer({
-            resource: {
-              href: "https://EijiGorilla.github.io/Symbols/TBM_LOGO2.png",
-            },
-            size: 40,
-          }),
-        ],
-        verticalOffset: {
-          screenLength: 100,
-          maxWorldLength: 500,
-          minWorldLength: 40,
-        },
-        callout: {
-          type: "line",
-          size: 1.5,
-          color: "#E83618",
-          border: {
-            color: "#E83618",
+    const symbol = new PointSymbol3D({
+      symbolLayers: [
+        new IconSymbol3DLayer({
+          resource: {
+            href: "https://EijiGorilla.github.io/Symbols/TBM_LOGO2.png",
           },
+          size: 40,
+        }),
+      ],
+      verticalOffset: {
+        screenLength: 100,
+        maxWorldLength: 500,
+        minWorldLength: 40,
+      },
+      callout: {
+        type: "line",
+        size: 1.5,
+        color: "#E83618",
+        border: {
+          color: "#E83618",
         },
-        // maxScale: 1000,
-        // minScale: 25000000,
-      });
-
-      const myGraphic = new Graphic({
-        geometry: point,
-        symbol: symbol,
-      });
-      return cutterHeadSpotLayer.add(myGraphic);
+      },
+      // maxScale: 1000,
+      // minScale: 25000000,
     });
+
+    const myGraphic = new Graphic({
+      geometry: point,
+      symbol: symbol,
+    });
+    return cutterHeadSpotLayer.add(myGraphic);
   });
 }
 

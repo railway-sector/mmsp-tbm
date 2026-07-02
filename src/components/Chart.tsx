@@ -1,105 +1,95 @@
-import { useEffect, useRef, useState, use } from "react";
+import { useEffect, useRef, useState } from "react";
 import { queryc, tbmTunnelLayer } from "../layers";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import * as am5radar from "@amcharts/amcharts5/radar";
-import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
-import am5themes_Responsive from "@amcharts/amcharts5/themes/Responsive";
 import {
   queryDefinitionExpression,
   responsiveChart,
   tbmCutterHeadSpotData0,
   thousands_separators,
-  totalFieldCount,
-  totalFieldSum,
+  fieldStatistic,
   zoomToLayer,
 } from "../Query";
 import { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
-import { MyContext } from "../contexts/MyContext";
-
-// Dispose function
-function maybeDisposeRoot(divId: any) {
-  am5.array.each(am5.registry.rootElements, function (root) {
-    if (root.dom.id === divId) {
-      root.dispose();
-    }
-  });
-}
+import { rootSetter } from "../chartSetter";
+import { useQuery } from "@tanstack/react-query";
+import { locationKeys } from "../interfaceKeys";
+import type { SelectedLocation } from "../interfaceKeys";
+import RippleImage from "./RippleImage";
 
 // Draw chart
 const Chart = () => {
-  const {
-    contractpackages,
-    segmentlines,
-    chartPanelwidth,
-    updateChartPanelwidth,
-  } = use(MyContext);
+  const [chartPanelwidth, setChartPanelwidth] = useState<any>();
   const arcgisScene = document.querySelector("arcgis-scene") as ArcgisScene;
 
-  const chartRef = useRef<unknown | any | undefined>({});
-  const [totalNumberRings, setTotalNumberRings] = useState<number>(0);
-  const [completedRings, setCompletedRings] = useState<number>(0);
-  // const [delayedRings, setDelayedRings] = useState<number>(0);
-  const [percentCompleted, setPercentCompleted] = useState<number>(0);
-  const [segmentedLength, setSegementedLength] = useState<number>(0);
+  //--- Location state
+  const { data: selectedLocation } = useQuery<SelectedLocation | any>({
+    queryKey: locationKeys.selected,
+    queryFn: async () => ({}),
+    staleTime: Infinity,
+  });
+  const cpackage = selectedLocation?.cpackage;
+  const segline = selectedLocation?.segline;
 
+  const chartRef = useRef<unknown | any | undefined>({});
   const chartID = "gauge-bar";
   const primaryLabelColor = "#9ca3af";
   const valueLabelColor = "#d1d5db";
 
-  useEffect(() => {
-    queryc.qValues = [contractpackages, segmentlines];
-    queryDefinitionExpression({
-      queryExpression: queryc.queryExpression(),
-      featureLayer: [tbmTunnelLayer],
-    });
+  const { data } = useQuery<any>({
+    queryKey: [cpackage, segline, tbmTunnelLayer],
+    queryFn: async () => {
+      queryc.qValues = [cpackage, segline];
+      queryDefinitionExpression({
+        queryExpression: queryc.queryExpression(),
+        featureLayer: [tbmTunnelLayer],
+      });
 
-    // Total number of rings
-    totalFieldCount({
-      qChart: queryc.queryExpression(),
-      layer: tbmTunnelLayer,
-      idField: "line",
-    }).then((result: any) => {
-      setTotalNumberRings(result);
-    });
+      //--- Total number of rings
+      const totalR = await fieldStatistic({
+        qChart: queryc.queryExpression(),
+        layer: tbmTunnelLayer,
+        statisticField: "line",
+        statisticType: "count",
+      });
 
-    // total number of completed rings
-    totalFieldCount({
-      qChart: `${queryc.queryExpression()} AND status = 3`,
-      layer: tbmTunnelLayer,
-      idField: "status",
-    }).then((result: any) => {
-      setCompletedRings(result);
-    });
+      //--- total number of completed rings
+      const totalC = await fieldStatistic({
+        qChart: `${queryc.queryExpression()} AND status = 3`,
+        layer: tbmTunnelLayer,
+        statisticField: "status",
+        statisticType: "count",
+      });
 
-    // total number of delayed rings
-    // totalFieldCount({
-    //   qChart: `${queryc.queryExpression()} AND delayed = 1`,
-    //   layer: tbmTunnelLayer,
-    //   idField: "delayed",
-    // }).then((result: any) => {
-    //   setDelayedRings(result);
-    // });
+      //--- Segmented Length
+      const totalL = await fieldStatistic({
+        qChart: `${queryc.queryExpression()} AND segmentno = 1`,
+        layer: tbmTunnelLayer,
+        statisticField: "SegmentLength",
+        statisticType: "sum",
+      });
 
-    // Segmented Length
-    totalFieldSum({
-      qChart: `${queryc.queryExpression()} AND segmentno = 1`,
-      layer: tbmTunnelLayer,
-      valueSumField: "SegmentLength",
-    }).then((result: any) => {
-      console.log("Segmented Length: ", result);
-      setSegementedLength(result);
-    });
+      //--- Percent progress
+      const perc_comp = (totalC / totalR) * 100;
 
-    // Draw TBM Cutter head Points
-    tbmCutterHeadSpotData0(`${queryc.queryExpression()} AND tbmSpot= 1`);
+      //--- Draw TBM Cutter head Points
+      tbmCutterHeadSpotData0(`${queryc.queryExpression()} AND tbmSpot= 1`);
 
-    zoomToLayer(tbmTunnelLayer, arcgisScene);
-  }, [contractpackages, segmentlines]);
+      zoomToLayer(tbmTunnelLayer, arcgisScene);
 
-  useEffect(() => {
-    setPercentCompleted((completedRings / totalNumberRings) * 100);
-  }, [totalNumberRings, completedRings]);
+      return {
+        totalR: totalR || 0,
+        totalC: totalC || 0,
+        totalL: totalL || 0,
+        perc_comp: perc_comp || 0,
+      };
+    },
+  });
+  const totalR = data?.totalR || 0;
+  const totalC = data?.totalC || 0;
+  const totalL = data?.totalL || 0;
+  const perc_comp = data?.perc_comp || 0;
 
   //-- Chart properties --//
   const percentProgressLabelColor = am5.color("#00C3FF"); // light blue
@@ -110,18 +100,7 @@ const Chart = () => {
 
   // Utility Chart
   useEffect(() => {
-    maybeDisposeRoot(chartID);
-
-    const root = am5.Root.new(chartID);
-    root.container.children.clear();
-    root._logo?.dispose();
-
-    // Set themesf
-    // https://www.amcharts.com/docs/v5/concepts/themes/
-    root.setThemes([
-      am5themes_Animated.new(root),
-      am5themes_Responsive.new(root),
-    ]);
+    const root = rootSetter({ chartID: chartID });
     const chart = root.container.children.push(
       am5radar.RadarChart.new(root, {
         panX: false,
@@ -131,39 +110,9 @@ const Chart = () => {
         radius: am5.percent(90), // size of overall chart
         innerRadius: -20, // expand inward,
         y: -50,
-        // paddingBottom: -40,
-        // paddingTop: -40,
       }),
     );
     chartRef.current = chart;
-
-    // chart.children.unshift(
-    //   am5.Label.new(root, {
-    //     text: "Completed",
-    //     fontSize: "2rem",
-    //     textAlign: "center",
-    //     fill: percentProgressLabelColor,
-    //     x: am5.percent(50),
-    //     centerX: am5.percent(50),
-    //     y: am5.percent(100),
-    //     centerY: am5.percent(10),
-    //   }),
-    // );
-
-    // chart.children.unshift(
-    //   am5.Label.new(root, {
-    //     text: !completedRings
-    //       ? "0"
-    //       : "[bold]" + thousands_separators(completedRings),
-    //     fontSize: "2.5rem",
-    //     textAlign: "center",
-    //     fill: chartTitleColor,
-    //     x: am5.percent(50),
-    //     centerX: am5.percent(50),
-    //     y: am5.percent(65),
-    //     centerY: am5.percent(80),
-    //   }),
-    // );
 
     const axisRenderer = am5radar.AxisRendererCircular.new(root, {
       innerRadius: am5.percent(120), //gagues width becomes thicker outward
@@ -236,9 +185,9 @@ const Chart = () => {
     );
 
     chart.onPrivate("width", (width: any) => {
-      updateChartPanelwidth(width);
+      setChartPanelwidth(width);
     });
-    responsiveChart(root, chart, completedRings, new_valueSize);
+    responsiveChart(root, chart, totalC, new_valueSize);
 
     xAxis.createAxisRange(axisDataItem);
 
@@ -265,7 +214,7 @@ const Chart = () => {
 
     axisDataItem.animate({
       key: "value",
-      to: percentCompleted,
+      to: perc_comp,
       duration: 500,
       easing: am5.ease.out(am5.ease.cubic),
     });
@@ -283,7 +232,7 @@ const Chart = () => {
     xAxis.createAxisRange(
       xAxis.makeDataItem({
         above: true,
-        value: percentCompleted,
+        value: perc_comp,
         endValue: 100,
       }),
     );
@@ -348,7 +297,7 @@ const Chart = () => {
                 margin: "auto",
               }}
             >
-              {thousands_separators(totalNumberRings)}
+              {thousands_separators(totalR)}
             </dd>
           </dl>
         </div>
@@ -390,6 +339,7 @@ const Chart = () => {
             borderTopWidth: "6px",
             borderBottomWidth: "6px",
             borderColor: "#555555",
+            height: "20%",
           }}
         >
           <dt
@@ -401,7 +351,7 @@ const Chart = () => {
           >
             SEGMENTED LENGTH
           </dt>{" "}
-          {segmentedLength === null ? (
+          {totalL === null ? (
             <dd
               style={{
                 fontSize: `${new_valueSize}px`,
@@ -428,14 +378,38 @@ const Chart = () => {
                   paddingLeft: "10px",
                 }}
               >
-                {segmentedLength === 0
-                  ? segmentedLength
-                  : thousands_separators(segmentedLength)}{" "}
-                m
+                {totalL === 0 ? totalL : thousands_separators(totalL)} m
               </span>
             </dd>
           )}
         </dl>
+        {/* TBM Cutter head Logot */}
+        <div
+          style={{
+            display: "flex",
+            borderStyle: "solid",
+            // borderColor: "#555555",
+            borderLeftColor: "#555555",
+            borderRightColor: "#555555",
+            borderTopColor: "#555555",
+            borderBottomColor: "#555555",
+            borderLeftWidth: "3px",
+            height: "21%",
+            // paddingBottom: "10px",
+          }}
+        >
+          <RippleImage height={new_imageSize} width={new_imageSize} />
+          <dl style={{ marginTop: "2vh", marginLeft: "3.5vw" }}>
+            <dt
+              style={{
+                color: primaryLabelColor,
+                fontSize: `${new_fontSize}px`,
+              }}
+            >
+              CUTTER HEAD POSITION
+            </dt>
+          </dl>
+        </div>
       </div>
     </>
   );
