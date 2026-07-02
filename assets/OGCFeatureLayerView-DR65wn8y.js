@@ -1,1 +1,0 @@
-import{jx as l,jC as a}from"./index-t9xTnnrs.js";import{B as r}from"./FeatureLikeLayerView-D1SpynGp.js";let t=class extends r{constructor(){super(...arguments),this.layer=null}get availableFields(){return this.layer.fieldsIndex.fields.map(e=>e.name)}};l([a({readOnly:!0})],t.prototype,"availableFields",null);export{t as l};
