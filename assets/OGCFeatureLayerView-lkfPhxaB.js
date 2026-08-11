@@ -1,0 +1,1 @@
+import{iJ as l,iQ as a,W as s}from"./index-BwqLBZ2z.js";let r=class extends s{constructor(){super(...arguments),this.layer=null}get availableFields(){return this.layer.fieldsIndex.fields.map(e=>e.name)}};l([a({readOnly:!0})],r.prototype,"availableFields",null);export{r as l};

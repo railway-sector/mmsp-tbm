@@ -1,0 +1,1 @@
+import{iJ as s,iQ as t,W as r}from"./index-BwqLBZ2z.js";let a=class extends r{constructor(){super(...arguments),this.layer=null}get updateSuspended(){const e=this.parent?.dynamicGroupLayerView;return this.suspended&&(!e||e.suspended===!0)}};s([t()],a.prototype,"updateSuspended",null);export{a as s};
