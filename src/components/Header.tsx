@@ -1,14 +1,14 @@
-import { useEffect, useState } from "react";
-import { dateUpdate } from "../Query";
+import { dateUpdate } from "../query";
 import DropdownData from "./DropdownContext";
+import { useQuery } from "@tanstack/react-query";
 
 function Header() {
-  const [asOfDate, setAsOfDate] = useState(null);
-  useEffect(() => {
-    dateUpdate().then((response) => {
-      setAsOfDate(response);
-    });
-  }, []);
+  const { data } = useQuery<any>({
+    queryKey: ["As_Of_Date"],
+    queryFn: () => dateUpdate("TBM Tunnel"),
+    staleTime: Infinity,
+  });
+  const asofdate = data ?? "";
 
   return (
     <>
@@ -20,10 +20,7 @@ function Header() {
           height: "70px",
           padding: "0 1rem",
           borderStyle: "solid",
-          borderRightWidth: 5,
-          borderLeftWidth: 5,
-          borderBottomWidth: 5,
-          borderTopWidth: 5,
+          borderWidth: 1,
           borderColor: "#555555",
         }}
       >
@@ -54,7 +51,7 @@ function Header() {
             marginBottom: "3px",
           }}
         >
-          {!asOfDate ? "" : "As of " + asOfDate}
+          {!asofdate ? "" : "As of " + asofdate}
         </div>
 
         {/* Dropdown component */}

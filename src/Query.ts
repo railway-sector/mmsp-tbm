@@ -1,5 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
-import { cutterHeadSpotLayer, dateTable, tbmTunnelLayer } from "./layers";
+import {
+  cutterHeadSpotLayer,
+  dateTable,
+  tbmTunnelLayer,
+  tbm_cutterhead,
+} from "./layers";
 import StatisticDefinition from "@arcgis/core/rest/support/StatisticDefinition";
 import SpatialReference from "@arcgis/core/geometry/SpatialReference";
 import IconSymbol3DLayer from "@arcgis/core/symbols/IconSymbol3DLayer.js";
@@ -8,41 +13,64 @@ import Graphic from "@arcgis/core/Graphic";
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 import Query from "@arcgis/core/rest/support/Query";
 import * as am5 from "@amcharts/amcharts5";
-import type { statisticsType } from "./uniqueValues";
+import { cp_f, nb_q, sb_q, segline_f } from "./uniqueValues";
+import QueryExpressionLayers from "query-layers-expression";
 
-// Updat date
-export async function dateUpdate() {
-  const monthList = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
-
-  const query = dateTable.createQuery();
-  query.where = "category = 'TBM Tunnel'";
-
-  return dateTable.queryFeatures(query).then((response: any) => {
-    const stats = response.features;
-    const dates = stats.map((result: any) => {
-      const date = new Date(result.attributes.date);
-      const year = date.getFullYear();
-      const month = monthList[date.getMonth()];
-      const day = date.getDate();
-      const final = year < 1990 ? "" : `${month} ${day}, ${year}`;
-      return final;
-    });
-    return dates;
+//---------------------------------------------------------//
+//                 Add Layers to Map                      //
+//---------------------------------------------------------//
+export function addLayersToMap(map: any, layersList: any[]) {
+  layersList.forEach((layer: any) => {
+    map.add(layer);
   });
 }
+
+//---------------------------------------------------------//
+//                Date Function                           //
+//---------------------------------------------------------//
+export function yearMonthDay(date: Date) {
+  return {
+    year: date?.getFullYear() ?? 0,
+    month: date?.getMonth() + 1,
+    day: date?.getDate(),
+  };
+}
+
+export function toAsofdate(date: Date) {
+  //--- Return displayed date: (as of date)
+  const { year, day } = yearMonthDay(date);
+  const cmonth = date?.toLocaleString("en-US", { month: "long" });
+
+  return year <= 1970 ? "" : `${cmonth} ${day}, ${year}`;
+}
+
+export async function dateUpdate(category: string) {
+  //--- Only executed during an initial render
+  const query = dateTable.createQuery();
+  query.where = `category = '${category}'`; //'TBM Tunnel'
+
+  const { features } = await dateTable.queryFeatures(query);
+  return features.map(({ attributes }: any) => {
+    const asofdate = toAsofdate(new Date(attributes.date));
+
+    return asofdate;
+  });
+}
+
+//--- Returns query expression
+export const makeQuery = (
+  qValues: string[],
+  qFields: string[],
+  qExpression?: string,
+  q2Expression?: string,
+) => {
+  const q = new QueryExpressionLayers();
+  q.qValues = qValues;
+  q.qFields = qFields;
+  if (qExpression) q.qExpression = qExpression;
+  if (q2Expression) q.q2Expression = q2Expression;
+  return q;
+};
 
 //---------------------------------------------------------//
 //    Definition Expression using queryExpression          //
@@ -58,50 +86,62 @@ export function queryDefinitionExpression({
   queryExpression,
   featureLayer,
 }: queryDefinitionExpressionType) {
-  if (queryExpression) {
-    if (featureLayer) {
-      if (Array.isArray(featureLayer)) {
-        featureLayer.forEach((layer) => {
-          if (layer) {
-            layer.definitionExpression = queryExpression;
-            // layer.visible = true;
-          }
-        });
-      } else {
-        featureLayer.definitionExpression = queryExpression;
-        // featureLayer.visible = true;
-      }
-    }
-  }
+  if (!queryExpression || !featureLayer) return;
+  const layers = Array.isArray(featureLayer) ? featureLayer : [featureLayer];
+  layers.forEach(
+    (layer: any) => layer && (layer.definitionExpression = queryExpression),
+  );
 }
 
 interface fieldStatisticType {
   qChart: any;
   layer: any;
-  statisticField: any;
-  statisticType: statisticsType;
 }
 
-export async function fieldStatistic({
-  qChart,
-  layer,
-  statisticField,
-  statisticType,
-}: fieldStatisticType) {
-  const statsCollect = new StatisticDefinition({
-    onStatisticField: statisticField,
-    outStatisticFieldName: "statsCollect",
-    statisticType: statisticType,
+export async function fieldStatistic({ qChart, layer }: fieldStatisticType) {
+  //--- Total number of rings
+  const rings = new StatisticDefinition({
+    onStatisticField: "line",
+    outStatisticFieldName: "rings",
+    statisticType: "count",
+  });
+
+  //--- Total number of completed rings
+  const rcomp = new StatisticDefinition({
+    onStatisticField: `CASE WHEN status = 3 THEN 1 ELSE 0 END`,
+    outStatisticFieldName: "rcomp",
+    statisticType: "sum",
+  });
+
+  //--- Segmented Length
+  const lcomp = new StatisticDefinition({
+    onStatisticField: `SegmentLength`,
+    outStatisticFieldName: "lcomp",
+    statisticType: "sum",
   });
 
   //--- Query
-  const query = new Query();
-  query.outStatistics = [statsCollect];
-  query.where = qChart;
+  const isLine = qChart.includes(segline_f);
 
-  return layer?.queryFeatures(query).then((response: any) => {
-    return response.features[0].attributes.statsCollect;
+  const statsList = isLine ? [cp_f, segline_f] : [cp_f];
+  const query = new Query({
+    where: qChart,
+    outStatistics: [rings, rcomp, lcomp],
+    groupByFieldsForStatistics: statsList,
+    orderByFields: statsList,
   });
+
+  const response = await layer?.queryFeatures(query);
+  const attrs = response.features[0]?.attributes ?? {};
+  const totalr = attrs.rings;
+  const totalc = attrs.rcomp ?? 0;
+
+  return {
+    totalr: totalr,
+    totalc: totalc,
+    totall: attrs.lcomp ?? 0,
+    perc: totalr ? (totalc / totalr) * 100 : 0,
+  };
 }
 
 //---------------------------------------------------------//
@@ -112,47 +152,50 @@ export async function cutterHeadPositionData(queryExpression: any) {
   query.where = queryExpression;
   query.groupByFieldsForStatistics = ["segmentno", "line"];
 
-  return tbmTunnelLayer.queryFeatures(query).then((response: any) => {
-    const stats = response.features[0]?.attributes;
-    const segmentN = stats?.segmentno;
-    const tbmN = stats?.line;
-    return [segmentN, tbmN];
-  });
+  const response = await tbmTunnelLayer.queryFeatures(query);
+  const stats = response.features[0]?.attributes;
+  return [stats?.segmentno, stats?.line];
 }
 
 //---------------------------------------------------------//
 //    Cutter head spot data and time series chart data     //
 //---------------------------------------------------------//
+export const sf = SpatialReference.WebMercator;
 
-const spatialReference = SpatialReference.WebMercator;
-export async function tbmCutterHeadSpotData0(queryExpression: any) {
-  cutterHeadSpotLayer.removeAll();
-  const query = tbmTunnelLayer.createQuery();
+export async function tbmCutterHeadSpotQuery(qe: any, layer: FeatureLayer) {
+  const query = layer.createQuery();
   query.returnGeometry = true;
   query.groupByFieldsForStatistics = ["line"];
-  query.where = queryExpression;
+  query.outFields = ["line", "tbmSpot", "Package"];
+  query.where = `${qe} AND tbmSpot= 1`;
 
-  const response = await tbmTunnelLayer.queryFeatures(query);
+  return await layer.queryFeatures(query);
+}
+
+export async function tbmCutterHeadSpotData(qe: any, layer: FeatureLayer) {
+  cutterHeadSpotLayer.removeAll();
+
+  const response = await tbmCutterHeadSpotQuery(qe, layer);
   response.features.forEach((result: any) => {
     const vertex = result.geometry.paths[0];
     const long = (vertex[0][0] + vertex[1][0]) / 2;
     const lat = (vertex[0][1] + vertex[1][1]) / 2;
 
     const point: any = {
-      spatialReference: spatialReference,
+      spatialReference: sf,
       type: "point",
       x: long,
       y: lat,
       z: 5,
     };
 
+    const isNorth = result.attributes.line.includes("NB");
+
     const symbol = new PointSymbol3D({
       symbolLayers: [
         new IconSymbol3DLayer({
-          resource: {
-            href: "https://EijiGorilla.github.io/Symbols/TBM_LOGO2.png",
-          },
-          size: 40,
+          resource: { href: isNorth ? nb_q.logo : sb_q.logo },
+          size: 30,
         }),
       ],
       verticalOffset: {
@@ -162,22 +205,90 @@ export async function tbmCutterHeadSpotData0(queryExpression: any) {
       },
       callout: {
         type: "line",
-        size: 1.5,
-        color: "#E83618",
-        border: {
-          color: "#E83618",
-        },
+        size: 0.7,
+        color: isNorth ? nb_q.hex : sb_q.hex,
+        border: { color: isNorth ? nb_q.hex : sb_q.hex },
       },
-      // maxScale: 1000,
-      // minScale: 25000000,
     });
 
-    const myGraphic = new Graphic({
-      geometry: point,
-      symbol: symbol,
-    });
+    const myGraphic = new Graphic({ geometry: point, symbol: symbol });
     return cutterHeadSpotLayer.add(myGraphic);
   });
+}
+
+export async function animatedPointXY(qe: any, layer: any, cimSymbol: any) {
+  const response = await tbmCutterHeadSpotQuery(qe, layer);
+
+  //-- Create a point for each queries
+  response.features.forEach((result: any) => {
+    //- Nourth-Bound or South-Bound
+    const bound = result.attributes["line"].includes("NB") ? "NB" : "SB";
+
+    //-- Get lat and long
+    const vertex = result?.geometry?.paths[0];
+    const long = (vertex[0][0] + vertex[1][0]) / 2;
+    const lat = (vertex[0][1] + vertex[1][1]) / 2;
+
+    //- Create a point graphic
+    const point: any = { spatialReference: sf, type: "point", x: long, y: lat };
+    const pointGraphic = new Graphic({
+      geometry: point,
+      symbol: cimSymbol(bound),
+    });
+
+    //- Add to GraphicsLayer
+    return tbm_cutterhead.add(pointGraphic);
+  });
+}
+
+//------------------------------------------------//
+//            Overview Map constraint             //
+//------------------------------------------------//
+const PROHIBITED_ZOOM_KEYS = new Set([
+  "+",
+  "-",
+  "Shift",
+  "_",
+  "=",
+  "ArrowUp",
+  "ArrowDown",
+  "ArrowRight",
+  "ArrowLeft",
+]);
+
+export function disableZooming(view: any) {
+  view.popup.dockEnabled = true;
+  view.popup.actions = [];
+  view.ui.components = [];
+
+  // stops propagation of default behavior when an event fires
+  function stopEvtPropagation(event: any) {
+    event.stopPropagation();
+  }
+
+  const blockedInteractions: [string, string[]?][] = [
+    ["mouse-wheel"],
+    ["double-click"],
+    ["double-click", ["Control"]],
+    ["drag"],
+    ["drag", ["Shift"]],
+    ["drag", ["Shift", "Control"]],
+  ];
+
+  blockedInteractions.forEach(([eventName, modifiers]) => {
+    modifiers
+      ? view.on(eventName, modifiers)
+      : view.on(eventName, stopEvtPropagation);
+  });
+
+  // prevents zooming with the + and - keys
+  view.on("key-down", (event: any) => {
+    if (PROHIBITED_ZOOM_KEYS.has(event.key)) {
+      event.stopPropagation();
+    }
+  });
+
+  return view;
 }
 
 //---------------------------------------------------------//
@@ -190,33 +301,20 @@ export async function timeSeriesChartData(queryExpression: any) {
     statisticType: "sum",
   });
 
-  const query = tbmTunnelLayer.createQuery();
-  query.where = queryExpression;
-  query.outStatistics = [total_segment_comp];
-  query.outFields = ["enddate"];
-  query.orderByFields = ["enddate"];
-  query.groupByFieldsForStatistics = ["enddate"];
-
-  return tbmTunnelLayer.queryFeatures(query).then((response: any) => {
-    const stats = response.features;
-
-    // collect all dates for each viaduct type
-    const data = stats.map((result: any) => {
-      const attributes = result.attributes;
-      const date = attributes.enddate;
-      const value = attributes.total_segment_comp;
-
-      // compile in object
-      return Object.assign(
-        {},
-        {
-          date: date,
-          value: value,
-        },
-      );
-    });
-    return data;
+  const query = new Query({
+    where: queryExpression,
+    outStatistics: [total_segment_comp],
+    outFields: ["enddate"],
+    orderByFields: ["enddate"],
+    groupByFieldsForStatistics: ["enddate"],
   });
+
+  const response = await tbmTunnelLayer.queryFeatures(query);
+  const data = response.features.map((result: any) => {
+    const attrs = result.attributes;
+    return { date: attrs.enddate, value: attrs.total_segment_comp };
+  });
+  return data;
 }
 
 //---------------------------------------------------------//
@@ -264,38 +362,37 @@ export function responsiveChart(
   });
 }
 
-// Thousand separators function
+//--------------------------------------//
+//               Other tools            //
+//--------------------------------------//
+//--- Thousand separators function
 export function thousands_separators(num: any) {
   if (num) {
     const num_parts = num.toString().split(".");
     num_parts[0] = num_parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     return num_parts.join(".");
   }
+
+  if (num == 0) return "0";
 }
 
 export function zoomToLayer(layer: any, view: any) {
   return layer.queryExtent().then((response: any) => {
-    view
-      ?.goTo(response.extent, {
-        //response.extent
-        speedFactor: 2,
-      })
-      .catch((error: any) => {
-        if (error.name !== "AbortError") {
-          console.error(error);
-        }
-      });
+    view?.goTo(response.extent, { speedFactor: 2 }).catch((error: any) => {
+      if (error.name !== "AbortError") {
+        console.error(error);
+      }
+    });
   });
 }
 
-// Layer list
+//--------------------------------------//
+//            Layer List                //
+//--------------------------------------//
 export const defineActions = (event: any) => {
   const item = event.item;
   if (item.layer.type !== "group") {
-    item.panel = {
-      content: "legend",
-      open: true,
-    };
+    item.panel = { content: "legend", open: true };
   }
 
   item.title === "Soil Profile" ||

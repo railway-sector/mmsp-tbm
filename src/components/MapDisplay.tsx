@@ -17,17 +17,27 @@ import {
 } from "../layers";
 import "@esri/calcite-components/dist/components/calcite-button";
 import { useState } from "react";
+import MapOverview from "./MapOverView";
+import { addLayersToMap } from "../query";
+import UndergroundSwitch from "./UndergroundSwitch";
+import ProgressSummary from "./ProgressSummary";
+import type { ArcgisScene } from "@arcgis/map-components/dist/components/arcgis-scene";
 
 function MapDisplay() {
-  const arcgisScene = document.querySelector("arcgis-scene");
+  const arcgisScene: any = document.querySelector(
+    "arcgis-scene",
+  ) as ArcgisScene;
+
   const [_mapView, setMapView] = useState<any>();
 
-  arcgisScene?.viewOnReady(() => {
-    arcgisScene?.map?.add(alignmentGroupLayer);
-    arcgisScene?.map?.add(lotGroupLayer);
-    arcgisScene?.map?.add(stationStructureLayer);
-    arcgisScene?.map?.add(tbmGroupLayer);
-    arcgisScene?.map?.add(stationLayer);
+  arcgisScene?.viewOnReady(async () => {
+    addLayersToMap(arcgisScene?.map, [
+      alignmentGroupLayer,
+      lotGroupLayer,
+      stationStructureLayer,
+      tbmGroupLayer,
+      stationLayer,
+    ]);
 
     arcgisScene.view.environment.atmosphereEnabled = false;
     arcgisScene.view.environment.starsEnabled = false;
@@ -40,7 +50,6 @@ function MapDisplay() {
 
   return (
     <arcgis-scene
-      // item-id="5ba14f5a7db34710897da0ce2d46d55f"
       basemap="dark-gray-vector"
       ground="world-elevation"
       viewingMode="local"
@@ -50,8 +59,15 @@ function MapDisplay() {
         setMapView(event.target.id);
       }}
     >
-      <arcgis-compass slot="top-right"></arcgis-compass>
-      <arcgis-zoom slot="bottom-right"></arcgis-zoom>
+      <arcgis-compass slot="top-left"></arcgis-compass>
+      <arcgis-zoom slot="bottom-left"></arcgis-zoom>
+      <MapOverview />
+
+      {/* Underground switch */}
+      <UndergroundSwitch />
+
+      {/* Progress Summary Statiatics*/}
+      <ProgressSummary />
     </arcgis-scene>
   );
 }

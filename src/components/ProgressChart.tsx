@@ -1,15 +1,19 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, use } from "react";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
-import { queryDefinitionExpression, timeSeriesChartData } from "../Query";
+import {
+  makeQuery,
+  queryDefinitionExpression,
+  timeSeriesChartData,
+} from "../query";
 import { useQuery } from "@tanstack/react-query";
-import { locationKeys } from "../interfaceKeys";
-import type { SelectedLocation } from "../interfaceKeys";
-import { queryc2, tbmTunnelLayer } from "../layers";
+import { tbmTunnelLayer } from "../layers";
 import { rootSetter } from "../chartSetter";
+import { MyContext } from "../contexts/MyContext";
+import { cp_f, segline_f } from "../uniqueValues";
 
 const ProgressChart = () => {
-  // const { contractpackages, segmentlines } = use(MyContext);
+  const { cpackage, segline } = use(MyContext);
   const barSeriesRef = useRef<unknown | any | undefined>({});
   const legendRef = useRef<unknown | any | undefined>({});
   const xAxisRef = useRef<unknown | any | undefined>({});
@@ -17,26 +21,21 @@ const ProgressChart = () => {
   const chartRef = useRef<unknown | any | undefined>({});
   const chartID = "progress-bar";
 
-  //--- Location state
-  const { data: selectedLocation } = useQuery<SelectedLocation | any>({
-    queryKey: locationKeys.selected,
-    queryFn: async () => ({}),
-    staleTime: Infinity,
-  });
-  const cpackage = selectedLocation?.cpackage;
-  const segline = selectedLocation?.segline;
+  //--- make query
+  const queryc2 = makeQuery([cpackage, segline], [cp_f, segline_f]);
+  const qe = queryc2.queryExpression();
 
   const { data } = useQuery<any>({
     queryKey: [cpackage, segline, tbmTunnelLayer],
     queryFn: async () => {
-      queryc2.qValues = [cpackage, segline];
       queryDefinitionExpression({
-        queryExpression: queryc2.queryExpression(),
+        queryExpression: qe,
         featureLayer: [tbmTunnelLayer],
       });
 
-      const qe = `${queryc2.queryExpression()} AND enddate IS NOT NULL`;
-      const chartData = await timeSeriesChartData(qe);
+      const chartData = await timeSeriesChartData(
+        `${qe} AND enddate IS NOT NULL `,
+      );
 
       return {
         chartData: chartData || [],
@@ -75,22 +74,16 @@ const ProgressChart = () => {
 
     const cursor = chart.set(
       "cursor",
-      am5xy.XYCursor.new(root, {
-        behavior: "zoomX",
-      }),
+      am5xy.XYCursor.new(root, { behavior: "zoomX" }),
     );
     cursor.lineY.set("visible", false);
 
     // Create axes
-    // https://www.amcharts.com/docs/v5/charts/xy-chart/axes/
     const xAxis = chart.xAxes.push(
       am5xy.DateAxis.new(root, {
         maxDeviation: 0,
         groupData: true,
-        baseInterval: {
-          timeUnit: "day",
-          count: 1,
-        },
+        baseInterval: { timeUnit: "day", count: 1 },
         groupIntervals: [{ timeUnit: "month", count: 1 }],
         renderer: am5xy.AxisRendererX.new(root, {
           minGridDistance: 60,
@@ -98,17 +91,13 @@ const ProgressChart = () => {
           strokeWidth: 1,
           stroke: am5.color("#ffffff"),
         }),
-
-        //tooltip: am5.Tooltip.new(root, {})
       }),
     );
 
     const xRenderer = xAxis.get("renderer");
     xRenderer.labels.template.setAll({
-      //oversizedBehavior: "wrap",
       textAlign: "center",
       fill: am5.color("#ffffff"),
-      //maxWidth: 150,
       fontSize: 12,
     });
 
@@ -126,10 +115,8 @@ const ProgressChart = () => {
     );
 
     yAxis.get("renderer").labels.template.setAll({
-      //oversizedBehavior: "wrap",//
       textAlign: "center",
       fill: am5.color("#ffffff"),
-      //maxWidth: 150,
       fontSize: 12,
     });
     xAxisRef.current = xAxis;
@@ -148,7 +135,6 @@ const ProgressChart = () => {
     );
 
     // Add legend
-    // https://www.amcharts.com/docs/v5/charts/xy-chart/legend-xy-series/
     const legend = chart.children.push(
       am5.Legend.new(root, {
         centerX: am5.p50,
@@ -159,23 +145,9 @@ const ProgressChart = () => {
     );
     legendRef.current = legend;
 
-    legend.labels.template.setAll({
-      oversizedBehavior: "truncate",
-      fill: am5.color("#ffffff"),
-      fontSize: 17,
-      scale: 0.8,
-      //textDecoration: "underline"
-      //width: am5.percent(200)
-      //fontWeight: "300"
-    });
-
-    // check this;
-    // newDataItem = new DataItem(series, dataContext, series._makeDataItem(dataContext));
-    // dataItem is of dataItems
-    // dataContext: dataItem.dataContext
+    chart.children.removeValue(legend);
 
     // Add series
-    // https://www.amcharts.com/docs/v5/charts/xy-chart/series/
     const series = chart.series.push(
       am5xy.ColumnSeries.new(root, {
         name: "Series",
@@ -185,9 +157,7 @@ const ProgressChart = () => {
         valueYField: "value",
         valueXField: "date",
         valueYGrouped: "sum",
-        tooltip: am5.Tooltip.new(root, {
-          labelText: "{valueY}",
-        }),
+        tooltip: am5.Tooltip.new(root, { labelText: "{valueY}" }),
       }),
     );
     barSeriesRef.current = series;
@@ -238,12 +208,12 @@ const ProgressChart = () => {
         id={chartID}
         style={{
           height: "32vh",
-          width: "60%",
+          width: "70%",
           backgroundColor: "#2b2b2b",
           color: "white",
           position: "absolute",
           zIndex: 99,
-          bottom: 10,
+          bottom: 0,
           marginLeft: "1vw",
           marginRight: "auto",
         }}

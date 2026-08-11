@@ -4,23 +4,43 @@ import "@esri/calcite-components/dist/components/calcite-shell-panel";
 import "@esri/calcite-components/dist/components/calcite-action";
 import "@esri/calcite-components/dist/components/calcite-action-bar";
 import "@arcgis/map-components/components/arcgis-building-explorer";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import "@arcgis/map-components/components/arcgis-basemap-gallery";
 import "@arcgis/map-components/components/arcgis-layer-list";
 import "@arcgis/map-components/components/arcgis-legend";
 import "@arcgis/map-components/components/arcgis-direct-line-measurement-3d";
 import "@arcgis/map-components/components/arcgis-area-measurement-3d";
-import { defineActions } from "../Query";
+import { defineActions } from "../query";
 import ProgressChart from "./ProgressChart";
+import TimeSlider from "./TimeSlider";
+import { MyContext } from "../contexts/MyContext";
 
 function ActionPanel() {
-  const [activeWidget, setActiveWidget] = useState<any>(null);
-  const [nextWidget, setNextWidget] = useState<any>(null);
+  const { layerView } = use(MyContext);
+  const shellPanel: any = document.getElementById("left-shell-panel");
+  const timeSlider = document.querySelector("arcgis-time-slider");
+
+  //-----------------------------------------
+  //   Define active & next widget states
+  //-----------------------------------------
+  const [activeWidget, setActiveWidget] = useState(null);
+  const [nextWidget, setNextWidget] = useState(null);
+
+  const [hasOpenedBasemaps, setHasOpenedBasemaps] = useState(false);
+  useEffect(() => {
+    if (nextWidget === "basemaps") setHasOpenedBasemaps(true);
+  }, [nextWidget]);
+
+  //--- Click action handler function for active & next widget
+  const handleActionClick = (event: any) => {
+    const id = event.target.id;
+    setNextWidget(id);
+    setActiveWidget(nextWidget === activeWidget ? null : nextWidget);
+  };
 
   const directLineMeasure = document.querySelector(
     "arcgis-direct-line-measurement-3d",
   );
-  const shellPanel: any = document.getElementById("left-shell-panel");
 
   useEffect(() => {
     if (activeWidget) {
@@ -30,12 +50,13 @@ function ActionPanel() {
       actionActiveWidget.hidden = true;
       shellPanel.collapsed = true;
 
-      directLineMeasure
-        ? directLineMeasure.clear()
-        : console.log("Line measure is cleared");
-      // areaMeasure
-      //   ? areaMeasure.clear()
-      //   : console.log("Area measure is cleared.");
+      directLineMeasure && directLineMeasure.clear();
+
+      //--- Reset tbm tunnel layer when closed.
+      if (timeSlider) {
+        timeSlider.timeExtent = null;
+        layerView.filter = null;
+      }
     }
 
     if (nextWidget !== activeWidget) {
@@ -46,6 +67,11 @@ function ActionPanel() {
       shellPanel.collapsed = false;
 
       if (nextWidget === "charts") {
+        shellPanel.collapsed = true;
+      }
+
+      // Collapse shellPanel for timeslider
+      if (nextWidget === "timeslider") {
         shellPanel.collapsed = true;
       }
     }
@@ -63,9 +89,8 @@ function ActionPanel() {
           slot="action-bar"
           style={{
             borderStyle: "solid",
-            borderRightWidth: 3.5,
+            borderWidth: 0.5,
             borderLeftWidth: 1,
-            borderBottomWidth: 4.5,
             borderColor: "#555555",
           }}
         >
@@ -74,11 +99,7 @@ function ActionPanel() {
             icon="layers"
             text="layers"
             id="layers"
-            //textEnabled={true}
-            onClick={(event: any) => {
-              setNextWidget(event.target.id);
-              setActiveWidget(nextWidget === activeWidget ? null : nextWidget);
-            }}
+            onClick={handleActionClick}
           ></calcite-action>
 
           <calcite-action
@@ -86,10 +107,7 @@ function ActionPanel() {
             icon="basemap"
             text="basemaps"
             id="basemaps"
-            onClick={(event: any) => {
-              setNextWidget(event.target.id);
-              setActiveWidget(nextWidget === activeWidget ? null : nextWidget);
-            }}
+            onClick={handleActionClick}
           ></calcite-action>
 
           <calcite-action
@@ -97,10 +115,7 @@ function ActionPanel() {
             icon="graph-time-series"
             text="Progress Chart"
             id="charts"
-            onClick={(event: any) => {
-              setNextWidget(event.target.id);
-              setActiveWidget(nextWidget === activeWidget ? null : nextWidget);
-            }}
+            onClick={handleActionClick}
           ></calcite-action>
 
           <calcite-action
@@ -108,32 +123,23 @@ function ActionPanel() {
             icon="measure-line"
             text="Line Measurement"
             id="directline-measure"
-            onClick={(event: any) => {
-              setNextWidget(event.target.id);
-              setActiveWidget(nextWidget === activeWidget ? null : nextWidget);
-            }}
+            onClick={handleActionClick}
           ></calcite-action>
 
-          {/* <CalciteAction
-            data-action-id="area-measure"
-            icon="measure-area"
-            text="Area Measurement"
-            id="area-measure"
-            onClick={(event) => {
-              setNextWidget(event.target.id);
-              setActiveWidget(nextWidget === activeWidget ? null : nextWidget);
-            }}
-          ></CalciteAction> */}
+          <calcite-action
+            data-action-id="timeslider"
+            icon="sliders-horizontal"
+            text="Time Slider"
+            id="timeslider"
+            onClick={handleActionClick}
+          ></calcite-action>
 
           <calcite-action
             data-action-id="information"
             icon="information"
             text="Information"
             id="information"
-            onClick={(event: any) => {
-              setNextWidget(event.target.id);
-              setActiveWidget(nextWidget === activeWidget ? null : nextWidget);
-            }}
+            onClick={handleActionClick}
           ></calcite-action>
         </calcite-action-bar>
 
@@ -148,7 +154,9 @@ function ActionPanel() {
         </calcite-panel>
 
         <calcite-panel heading="Basemaps" data-panel-id="basemaps" hidden>
-          <arcgis-basemap-gallery referenceElement="arcgis-scene"></arcgis-basemap-gallery>
+          {hasOpenedBasemaps ? (
+            <arcgis-basemap-gallery referenceElement="arcgis-map"></arcgis-basemap-gallery>
+          ) : null}{" "}
         </calcite-panel>
 
         <calcite-panel
@@ -166,24 +174,14 @@ function ActionPanel() {
           <arcgis-direct-line-measurement-3d
             id="directLineMeasurementAnalysisButton"
             referenceElement="arcgis-scene"
-            // onarcgisPropertyChange={(event) => console.log(event.target.id)}
           ></arcgis-direct-line-measurement-3d>
         </calcite-panel>
 
-        {/* <CalcitePanel
-          heading="Area Measure"
-          height="l"
-          width="l"
-          data-panel-id="area-measure"
-          style={{ width: "18vw" }}
+        <calcite-panel
+          className="timeslider"
+          data-panel-id="timeslider"
           hidden
-        >
-          <arcgis-area-measurement-3d
-            id="areaMeasurementAnalysisButton"
-            referenceElement="arcgis-scene"
-            icon="measure-area"
-          ></arcgis-area-measurement-3d>
-        </CalcitePanel> */}
+        ></calcite-panel>
 
         <calcite-panel heading="Description" data-panel-id="information" hidden>
           {nextWidget === "information" ? (
@@ -206,9 +204,14 @@ function ActionPanel() {
           )}
         </calcite-panel>
       </calcite-shell-panel>
+
       {/* Monthly progress */}
       {nextWidget === "charts" && nextWidget !== activeWidget && (
         <ProgressChart />
+      )}
+
+      {nextWidget === "timeslider" && nextWidget !== activeWidget && (
+        <TimeSlider />
       )}
     </>
   );

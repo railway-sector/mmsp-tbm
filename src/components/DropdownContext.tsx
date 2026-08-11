@@ -1,74 +1,98 @@
-import { useState } from "react";
+import { use, useMemo, useState } from "react";
 import Select from "react-select";
 import "../index.css";
-import { dropdownDataObject, defaultList } from "../uniqueValues";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { locationKeys } from "../interfaceKeys";
-import type { SelectedLocation } from "../interfaceKeys";
+import { dropdownDataObject, initialState } from "../uniqueValues";
+import { useQuery } from "@tanstack/react-query";
+import { MyContext } from "../contexts/MyContext";
+
+const theme = {
+  bg: "#2b2b2b",
+  bgDisabled: "#232323",
+  border: "#444444",
+  borderHover: "#5a5a5a",
+  borderFocus: "#6aa9ff",
+  text: "#ffffff",
+  textMuted: "#9a9a9a",
+  optionFocused: "#3a3a3a",
+  optionSelected: "#353535",
+};
+
+const customStyles = {
+  container: (s: any) => ({ ...s, width: "180px" }),
+  control: (s: any, { isDisabled, isFocused }: any) => ({
+    ...s,
+    backgroundColor: isDisabled ? theme.bgDisabled : theme.bg,
+    borderColor: isFocused ? theme.borderFocus : theme.border,
+    borderRadius: "6px",
+    minHeight: "36px",
+    boxShadow: "none",
+    opacity: isDisabled ? 0.6 : 1,
+    "&:hover": {
+      borderColor: isFocused ? theme.borderFocus : theme.borderHover,
+    },
+  }),
+  placeholder: (s: any) => ({ ...s, color: theme.textMuted }),
+  singleValue: (s: any) => ({ ...s, color: theme.text }),
+  input: (s: any) => ({ ...s, color: theme.text }),
+  indicatorSeparator: (s: any) => ({ ...s, backgroundColor: theme.border }),
+  dropdownIndicator: (s: any) => ({
+    ...s,
+    color: theme.textMuted,
+    "&:hover": { color: theme.text },
+  }),
+  clearIndicator: (s: any) => ({
+    ...s,
+    color: theme.textMuted,
+    "&:hover": { color: theme.text },
+  }),
+  menu: (s: any) => ({
+    ...s,
+    backgroundColor: theme.bg,
+    border: `1px solid ${theme.border}`,
+    overflow: "hidden",
+  }),
+  option: (s: any, { isFocused, isSelected }: any) => ({
+    ...s,
+    backgroundColor: isFocused
+      ? theme.optionFocused
+      : isSelected
+        ? theme.optionSelected
+        : theme.bg,
+    color: theme.text,
+    cursor: "pointer",
+  }),
+};
 
 export default function DropdownData() {
-  const queryClient = useQueryClient();
-  const [cpSelected, setCpSelected] = useState<null | any>(defaultList);
-  const [lineSelected, setLineSelected] = useState<null | any>(null);
-  const [lineList, setLineList] = useState<null | undefined | any>(
-    defaultList.field2,
-  );
+  const { updateCpackage, updateSegline } = use(MyContext);
 
+  const [cpSelected, setCpSelected] = useState<null | any>(initialState);
+  const [lineSelected, setLineSelected] = useState<null | any>(null);
+
+  //--- Initial list
   const { data: cplist } = useQuery<any>({
-    queryKey: ["dropdownData"], // Do not add lotLayer as a dependency. The dropdown list will not be updated properly.
+    queryKey: ["dropdownData"],
     queryFn: async () => {
       return dropdownDataObject;
     },
-    // staleTime: Infinity, // never refetch in the backround on its own.
   });
 
-  function updateDropdownListValues(
-    cp_obj_field: SelectedLocation["cpackage"],
-    line_obj_field: SelectedLocation["segline"],
-  ) {
-    return queryClient.setQueryData<SelectedLocation>(locationKeys.selected, {
-      cpackage: cp_obj_field,
-      segline: line_obj_field,
-    });
-  }
+  //--- Without useMemo, the code above returns and collects [] in memory every time
+  //--- the component renders => waster of memory.
+  const seglineList = useMemo(() => cpSelected?.field2 ?? [], [cpSelected]);
 
-  // handle change event of the Municipality dropdown
+  //--- Update Contract package
   const handleContractPackageChange = (obj: any) => {
-    updateDropdownListValues(obj.field1, undefined);
+    updateCpackage(obj?.field1 ?? null);
+    updateSegline(null);
     setCpSelected(obj);
-    setLineList(obj.field2);
     setLineSelected(null);
   };
 
-  // handle change event of the segmentLine dropdown
+  //--- Update Segment Line
   const handleSegmentLineChange = (obj: any) => {
-    updateDropdownListValues(cpSelected?.field1, obj.name);
+    updateSegline(obj?.name ?? null);
     setLineSelected(obj);
-  };
-
-  // Style CSS
-  const customstyles = {
-    option: (styles: any, { isFocused, isSelected }: any) => {
-      // const color = chroma(data.color);
-      return {
-        ...styles,
-        backgroundColor: isFocused
-          ? "#999999"
-          : isSelected
-            ? "#2b2b2b"
-            : "#2b2b2b",
-        color: "#ffffff",
-      };
-    },
-
-    control: (defaultStyles: any) => ({
-      ...defaultStyles,
-      backgroundColor: "#2b2b2b",
-      borderColor: "#949494",
-      color: "#ffffff",
-      touchUi: false,
-    }),
-    singleValue: (defaultStyles: any) => ({ ...defaultStyles, color: "#fff" }),
   };
 
   return (
@@ -77,49 +101,26 @@ export default function DropdownData() {
         display: "flex",
         flexDirection: "row",
         margin: "auto",
-        padding: "5px",
-        borderRadius: "5px",
-        zIndex: 999,
+        gap: "12px",
       }}
     >
-      <div
-        style={{
-          color: "white",
-          fontSize: "0.85rem",
-          margin: "auto",
-          paddingRight: "0.5rem",
-        }}
-      >
-        Contract Package
-      </div>
-
       <Select
         placeholder="Select Contract Package"
         value={cpSelected}
         options={Array.isArray(cplist) ? cplist : []}
         onChange={handleContractPackageChange}
         getOptionLabel={(x: any) => x.field1}
-        styles={customstyles}
+        styles={customStyles}
       />
       <br />
-      <div
-        style={{
-          color: "white",
-          fontSize: "0.85rem",
-          margin: "auto",
-          paddingRight: "0.5rem",
-          marginLeft: "15px",
-        }}
-      >
-        Segment Line
-      </div>
       <Select
-        placeholder="Select Segment Line"
+        placeholder="Select Line"
         value={lineSelected}
-        options={lineList && lineList}
+        options={seglineList && seglineList}
         onChange={handleSegmentLineChange}
         getOptionLabel={(x: any) => x.name}
-        styles={customstyles}
+        isClearable
+        styles={customStyles}
       />
     </div>
   );

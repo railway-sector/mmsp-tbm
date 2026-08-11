@@ -1,574 +1,150 @@
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
-import LabelClass from "@arcgis/core/layers/support/LabelClass";
-import SimpleFillSymbol from "@arcgis/core/symbols/SimpleFillSymbol";
-import UniqueValueRenderer from "@arcgis/core/renderers/UniqueValueRenderer";
-import SimpleRenderer from "@arcgis/core/renderers/SimpleRenderer";
 import SceneLayer from "@arcgis/core/layers/SceneLayer";
 import GroupLayer from "@arcgis/core/layers/GroupLayer";
-import TextSymbol from "@arcgis/core/symbols/TextSymbol.js";
-import MeshSymbol3D from "@arcgis/core/symbols/MeshSymbol3D.js";
-import FillSymbol3DLayer from "@arcgis/core/symbols/FillSymbol3DLayer.js";
-import LabelSymbol3D from "@arcgis/core/symbols/LabelSymbol3D";
-import TextSymbol3DLayer from "@arcgis/core/symbols/TextSymbol3DLayer";
-import LineSymbol3D from "@arcgis/core/symbols/LineSymbol3D.js";
-import PathSymbol3DLayer from "@arcgis/core/symbols/PathSymbol3DLayer.js";
-import SolidEdges3D from "@arcgis/core/symbols/edges/SolidEdges3D";
 import GraphicsLayer from "@arcgis/core/layers/GraphicsLayer";
-import QueryExpressionLayers from "query-layers-expression";
-import { cp_field } from "./uniqueValues";
-import { line_field } from "./uniqueValues";
+import {
+  lot_bdry_label,
+  lot_bdry_renderer,
+  lot_boundary_renderer,
+  lot_id_label,
+  lot_popup,
+  lot_status_renderer,
+  portalItems,
+  st_structure_renderer,
+  station_box_renderer,
+  station_label,
+  station_ov_label,
+  tbm_line_diss_renderer,
+  tbm_line_popup,
+  tbm_status_renderer,
+} from "./uniqueValues";
 
-export const queryc = new QueryExpressionLayers(
-  [undefined, undefined],
-  [cp_field, line_field],
-  undefined,
-  undefined,
-  "string",
-  0,
-  undefined,
-  undefined,
-  undefined,
-);
-
-export const queryc2 = new QueryExpressionLayers(
-  [undefined, undefined],
-  [cp_field, line_field],
-  undefined,
-  undefined,
-  "string",
-  0,
-  undefined,
-  undefined,
-  undefined,
-);
-
-/* Standalone table for Dates */
+//----------------------------------------------//
+//              Other Layers                    //
+//----------------------------------------------//
 export const dateTable = new FeatureLayer({
-  portalItem: {
-    id: "a084d9cae5234d93b7aa50f7eb782aec",
-    portal: {
-      url: "https://gis.railway-sector.com/portal",
-    },
-  },
+  portalItem: portalItems("a084d9cae5234d93b7aa50f7eb782aec"),
 });
 
-/* Construction Boundary */
-
-// Construction boundary
-const ConstructionBoundaryFill = new UniqueValueRenderer({
-  field: "MappingBoundary",
-  uniqueValueInfos: [
-    {
-      value: 1,
-      symbol: new SimpleFillSymbol({
-        color: [0, 0, 0, 0],
-        outline: {
-          width: 2.5,
-          color: [220, 220, 220],
-          style: "short-dash",
-        },
-      }),
-    },
-  ],
-});
-
+//----------------------------------------------//
+//                Alignment Layers              //
+//----------------------------------------------//
+//--- CONSTRUCTION BOUNDARY LAYER ---//
 export const constructionBoundaryLayer = new FeatureLayer({
-  portalItem: {
-    id: "0c172b82ddab44f2bb439542dd75e8ae",
-    portal: {
-      url: "https://gis.railway-sector.com/portal",
-    },
-  },
+  portalItem: portalItems("0c172b82ddab44f2bb439542dd75e8ae"),
   layerId: 4,
-  renderer: ConstructionBoundaryFill,
+  renderer: lot_boundary_renderer,
   definitionExpression: "MappingBoundary = 1",
   title: "Construction Boundary",
-  elevationInfo: {
-    mode: "on-the-ground",
-  },
+  elevationInfo: { mode: "on-the-ground" },
   popupEnabled: false,
+  minScale: 70000,
+  maxScale: 0,
 });
 
-// * Station Box * //
-const stationBoxRenderer = new UniqueValueRenderer({
-  field: "Layer",
-  uniqueValueInfos: [
-    {
-      value: "U-Shape Retaining Wall",
-      symbol: new SimpleFillSymbol({
-        color: [104, 104, 104],
-        style: "backward-diagonal",
-        outline: {
-          width: 1,
-          color: "black",
-        },
-      }),
-    },
-    {
-      value: "Cut & Cover Box",
-      symbol: new SimpleFillSymbol({
-        color: [104, 104, 104],
-        style: "backward-diagonal",
-        outline: {
-          width: 1,
-          color: "black",
-        },
-      }),
-    },
-    {
-      value: "TBM Shaft",
-      symbol: new SimpleFillSymbol({
-        color: [104, 104, 104],
-        style: "backward-diagonal",
-        outline: {
-          width: 1,
-          color: "black",
-        },
-      }),
-    },
-    {
-      value: "TBM",
-      symbol: new SimpleFillSymbol({
-        color: [178, 178, 178],
-        style: "backward-diagonal",
-        outline: {
-          width: 0.5,
-          color: "black",
-        },
-      }),
-    },
-    {
-      value: "Station Platform",
-      symbol: new SimpleFillSymbol({
-        color: [240, 204, 230],
-        style: "backward-diagonal",
-        outline: {
-          width: 0.4,
-          color: "black",
-        },
-      }),
-    },
-    {
-      value: "Station Box",
-      symbol: new SimpleFillSymbol({
-        color: [0, 0, 0, 0],
-        outline: {
-          width: 2,
-          color: "red",
-        },
-      }),
-    },
-    {
-      value: "NATM",
-      symbol: new SimpleFillSymbol({
-        color: [178, 178, 178, 0],
-        style: "backward-diagonal",
-        outline: {
-          width: 0.5,
-          color: "grey",
-        },
-      }),
-    },
-  ],
-});
-
+//--- STATION BOX LAYER ---//
 export const stationBoxLayer = new FeatureLayer({
-  portalItem: {
-    id: "52d4f29105934e3f95f6b39c7e5fba6e",
-    portal: {
-      url: "https://gis.railway-sector.com/portal",
-    },
-  },
+  portalItem: portalItems("52d4f29105934e3f95f6b39c7e5fba6e"),
   layerId: 2,
-  renderer: stationBoxRenderer,
-  minScale: 150000,
+  renderer: station_box_renderer,
+  minScale: 70000,
   maxScale: 0,
   title: "Station Box",
   popupEnabled: false,
-  elevationInfo: {
-    mode: "on-the-ground",
-  },
+  elevationInfo: { mode: "on-the-ground" },
 });
 
-// * Station Layer * //
-const labelClass = new LabelClass({
-  symbol: new LabelSymbol3D({
-    symbolLayers: [
-      new TextSymbol3DLayer({
-        material: {
-          color: "#d4ff33",
-        },
-        size: 15,
-        halo: {
-          color: "black",
-          size: 0.5,
-        },
-        font: {
-          family: "Ubuntu Mono",
-          //weight: "bold"
-        },
-      }),
-    ],
-    verticalOffset: {
-      screenLength: 100,
-      maxWorldLength: 700,
-      minWorldLength: 80,
-    },
-
-    callout: {
-      type: "line", // autocasts as new LineCallout3D()
-      color: [128, 128, 128, 0.5],
-      size: 0.2,
-      border: {
-        color: "grey",
-      },
-    },
-  }),
-  // labelPlacement: "above-center",
-  labelExpressionInfo: {
-    expression: "$feature.Station",
-    //value: "{TEXTSTRING}"
-  },
-});
-
+//--- STATION POINT FEATURE ---//
 export const stationLayer = new FeatureLayer({
-  portalItem: {
-    id: "52d4f29105934e3f95f6b39c7e5fba6e",
-    portal: {
-      url: "https://gis.railway-sector.com/portal",
-    },
-  },
+  portalItem: portalItems("52d4f29105934e3f95f6b39c7e5fba6e"),
   layerId: 1,
   title: "Station",
-  labelingInfo: [labelClass],
+  labelingInfo: [station_label],
   definitionExpression: "Project = 'MMSP'",
-  elevationInfo: {
-    mode: "relative-to-ground",
-  },
+  elevationInfo: { mode: "relative-to-ground" },
 });
 stationLayer.listMode = "hide";
 
-/* lot layer */
-const lotDefaultSymbol = new SimpleFillSymbol({
-  color: [0, 0, 0, 0],
-  style: "solid",
-  outline: {
-    // autocasts as new SimpleLineSymbol()
-    color: [110, 110, 110],
-    width: 0.7,
-  },
+//--- STATION POINT FEATURE (OVERVIEW) ---//
+export const stationLayer_ov = new FeatureLayer({
+  portalItem: portalItems("52d4f29105934e3f95f6b39c7e5fba6e"),
+  layerId: 1,
+  title: "Station",
+  labelingInfo: [station_ov_label],
+  definitionExpression: "Project = 'MMSP'",
+  elevationInfo: { mode: "on-the-ground" },
 });
+stationLayer_ov.listMode = "hide";
 
-const lotColor = [
-  [112, 173, 71, 0.5],
-  [0, 112, 255, 0.5],
-  [255, 255, 0, 0.5],
-  [255, 170, 0, 0.5],
-  [255, 0, 0, 0.5],
-  [0, 115, 76, 0.5],
-];
-
-const lotLayerStatusRenderer = new UniqueValueRenderer({
-  field: "StatusNVS3",
-  defaultSymbol: lotDefaultSymbol,
-  uniqueValueInfos: [
-    {
-      value: 1,
-      label: "Paid",
-      symbol: new SimpleFillSymbol({
-        color: lotColor[0],
-      }),
-    },
-    {
-      value: 2,
-      label: "For Payment Processing",
-      symbol: new SimpleFillSymbol({
-        color: lotColor[1],
-      }),
-    },
-    {
-      value: 3,
-      label: "For Legal Pass",
-      symbol: new SimpleFillSymbol({
-        color: lotColor[2],
-      }),
-    },
-    {
-      value: 4,
-      label: "For Appraisal/Offer to Buy",
-      symbol: new SimpleFillSymbol({
-        color: lotColor[3],
-      }),
-    },
-    {
-      value: 5,
-      label: "For Expro",
-      symbol: new SimpleFillSymbol({
-        color: lotColor[4],
-      }),
-    },
-    {
-      value: 6,
-      label: "with WOP Fully Turned-over",
-      symbol: new SimpleFillSymbol({
-        color: lotColor[5],
-      }),
-    },
-  ],
-});
-
-const lotLabel = new LabelClass({
-  symbol: new TextSymbol({
-    color: "black",
-    font: {
-      family: "Gill Sans",
-      size: 8,
-    },
-  }),
-  // labelPlacement: "above-center",
-  labelExpressionInfo: {
-    expression: "$feature.CN",
-  },
-});
-
+//----------------------------------------------//
+//                Lot Layers                    //
+//----------------------------------------------//
 export const lotLayer = new FeatureLayer({
-  portalItem: {
-    id: "0c172b82ddab44f2bb439542dd75e8ae",
-    portal: {
-      url: "https://gis.railway-sector.com/portal",
-    },
-  },
+  portalItem: portalItems("0c172b82ddab44f2bb439542dd75e8ae"),
   layerId: 8,
   title: "Land Acquisition",
-
   labelsVisible: false,
-  labelingInfo: [lotLabel],
-  renderer: lotLayerStatusRenderer,
-  popupTemplate: {
-    title: "<p>{Id}</p>",
-    lastEditInfoEnabled: false,
-    returnGeometry: true,
-    content: [
-      {
-        type: "fields",
-        fieldInfos: [
-          {
-            fieldName: "OWNER",
-            label: "Land Owner",
-          },
-          {
-            fieldName: "Station1",
-          },
-          {
-            fieldName: "StatusNVS3",
-            label: "<p>Status of Land Acquisition</p>",
-          },
-        ],
-      },
-    ],
-  },
+  labelingInfo: [lot_id_label],
+  renderer: lot_status_renderer,
+  popupTemplate: lot_popup,
 });
 
-/* Lot boundary only */
-const lotLayerBoundaryRenderer = new SimpleRenderer({
-  symbol: new SimpleFillSymbol({
-    color: [0, 0, 0, 0],
-    style: "solid",
-    outline: {
-      color: [110, 110, 110],
-      width: 1.5,
-    },
-  }),
-});
-
-const lotLayerBoundaryLabel = new LabelClass({
-  symbol: new TextSymbol({
-    color: "white",
-    font: {
-      // autocast as new Font()
-      family: "Gill Sans",
-      size: 8,
-    },
-  }),
-  // labelPlacement: "above-center",
-  labelExpressionInfo: {
-    expression: "$feature.CN",
-  },
-});
-
+//--- LOT BOUNDARY LAYER ---//
 export const lotLayerBoundary = new FeatureLayer({
-  portalItem: {
-    id: "0c172b82ddab44f2bb439542dd75e8ae",
-    portal: {
-      url: "https://gis.railway-sector.com/portal",
-    },
-  },
+  portalItem: portalItems("0c172b82ddab44f2bb439542dd75e8ae"),
   layerId: 8,
   title: "Lot Boundary",
-  renderer: lotLayerBoundaryRenderer,
-  labelingInfo: [lotLayerBoundaryLabel],
+  renderer: lot_bdry_renderer,
+  labelingInfo: [lot_bdry_label],
 });
 
-/* TBM Segment */
-const tbmColor = {
-  1: [225, 225, 225, 0.5], // To be Constructed (white), original: [225, 225, 225, 0.1]
-  //1: "#ffffff",
-  2: [232, 54, 24, 1], // Excavated
-  3: [0, 112, 255, 0.8], // Completed
-};
-
-export const tbmDelayedRenderer = new UniqueValueRenderer({
-  field: "delayed",
-  uniqueValueInfos: [
-    {
-      value: 1,
-      label: "Delayed Segment",
-      symbol: new LineSymbol3D({
-        symbolLayers: [
-          new PathSymbol3DLayer({
-            profile: "circle",
-            material: {
-              color: [255, 0, 0, 0.5],
-            },
-            width: 5,
-            height: 5,
-            join: "miter",
-            cap: "butt",
-            anchor: "bottom",
-            profileRotation: "all",
-          }),
-        ],
-      }),
-    },
-  ],
-});
-
-export const tbmStatusRenderer = new UniqueValueRenderer({
-  field: "status",
-  uniqueValueInfos: [
-    {
-      value: 1,
-      label: "To be Constructed",
-      symbol: new LineSymbol3D({
-        symbolLayers: [
-          new PathSymbol3DLayer({
-            profile: "circle",
-            material: {
-              color: tbmColor[1],
-            },
-            width: 5,
-            height: 5,
-            join: "miter",
-            cap: "butt",
-            anchor: "bottom",
-            profileRotation: "all",
-          }),
-        ],
-      }),
-    },
-    {
-      value: 2,
-      label: "Excavating (Cutter Head)",
-      symbol: new LineSymbol3D({
-        symbolLayers: [
-          new PathSymbol3DLayer({
-            profile: "circle",
-            material: {
-              color: tbmColor[2],
-            },
-            width: 5,
-            height: 5,
-            join: "miter",
-            cap: "butt",
-            anchor: "bottom",
-            profileRotation: "all",
-          }),
-        ],
-      }),
-    },
-    {
-      value: 3,
-      label: "Segmented",
-      symbol: new LineSymbol3D({
-        symbolLayers: [
-          new PathSymbol3DLayer({
-            profile: "circle",
-            material: {
-              color: tbmColor[3],
-            },
-            width: 5,
-            height: 5,
-            join: "miter",
-            cap: "butt",
-            anchor: "bottom",
-            profileRotation: "all",
-          }),
-        ],
-      }),
-    },
-  ],
-});
-
+//----------------------------------------------//
+//                TBM Tunnel Layer              //
+//----------------------------------------------//
 export const tbmTunnelLayer = new FeatureLayer({
-  portalItem: {
-    id: "518e9321de7745f68b34e48d54cce5fb",
-    portal: {
-      url: "https://gis.railway-sector.com/portal",
-    },
-  },
-  elevationInfo: {
-    mode: "absolute-height",
-    offset: -2,
-  },
+  portalItem: portalItems("4d91f3211c554315a4206f941d50dba2"),
+  elevationInfo: { mode: "absolute-height", offset: -2 },
   hasZ: true,
-  //definitionExpression: "Package = 'CP101'",
-  // outFields: ["segmentno", "line", "SegmentLength", "Package", "status"],
-  renderer: tbmStatusRenderer,
+  renderer: tbm_status_renderer,
   title: "TBM Segment",
-  popupTemplate: {
-    title: "Ring No.: <b>{segmentno}</b> (<b>{line}</b>)",
-    lastEditInfoEnabled: false,
-  },
+  outFields: ["enddate", "Package", "line", "OBJECTID"],
+  definitionExpression: "Package = 'CP101'",
+  popupTemplate: tbm_line_popup,
+  minScale: 7000,
+});
+
+//--- TBM TUNNEL LINE (DISSOLVED) ---//
+export const tbm_tunnel_disolved_layer = new FeatureLayer({
+  portalItem: portalItems("edfa4c005ece49298b5ccc19f6a6caca"),
+  elevationInfo: { mode: "on-the-ground" },
+  title: "TBM Line (Dissolved)",
+  popupEnabled: false,
+  renderer: tbm_line_diss_renderer,
 });
 
 export const cutterHeadSpotLayer = new GraphicsLayer({
   title: "Cutter Head Position",
 });
 
-/* Station Structure */
+//----------------------------------------------//
+//       TBM Cutter Head Position Point         //
+//----------------------------------------------//
+export const tbm_cutterhead = new GraphicsLayer();
+
+//----------------------------------------------//
+//         Station Structure Layer              //
+//----------------------------------------------//
 export const stationStructureLayer = new SceneLayer({
-  //structureLayer
-  portalItem: {
-    id: "fbb99839306e4e9fbf94818b53b4f142",
-    portal: {
-      url: "https://gis.railway-sector.com/portal",
-    },
-  },
+  portalItem: portalItems("fbb99839306e4e9fbf94818b53b4f142"),
   popupEnabled: false,
-  elevationInfo: {
-    mode: "absolute-height",
-    offset: 0,
-  },
+  renderer: st_structure_renderer,
+  elevationInfo: { mode: "absolute-height", offset: 0 },
   title: "Station Structure",
-  // when filter using date, example below. use this format
-  //definitionExpression: "EndDate = date'2020-6-3'"
-});
-stationStructureLayer.renderer = new SimpleRenderer({
-  symbol: new MeshSymbol3D({
-    symbolLayers: [
-      new FillSymbol3DLayer({
-        material: {
-          color: [225, 225, 225, 0],
-          colorMixMode: "replace",
-        },
-        edges: new SolidEdges3D({
-          color: [225, 225, 225, 0.3],
-        }),
-      }),
-    ],
-  }),
 });
 
+//----------------------------------------------//
+//               Group Layers                   //
+//----------------------------------------------//
 export const lotGroupLayer = new GroupLayer({
   title: "Land Acquisition",
   visible: false,

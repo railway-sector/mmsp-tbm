@@ -50,3 +50,7 @@ arcgis-chart {
     opacity: 0;
   }
 }
+
+arcgis-map * {
+  outline: none !important;
+}
