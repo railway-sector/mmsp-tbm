@@ -128,8 +128,8 @@ function ActionPanel() {
 
           <calcite-action
             data-action-id="timeslider"
-            icon="sliders-horizontal"
-            text="Time Slider"
+            icon="time-filter"
+            text="Segmented Progress"
             id="timeslider"
             onClick={handleActionClick}
           ></calcite-action>

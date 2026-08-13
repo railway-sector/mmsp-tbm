@@ -14,7 +14,7 @@ import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 import Query from "@arcgis/core/rest/support/Query";
 import * as am5 from "@amcharts/amcharts5";
 import { cp_f, nb_q, sb_q, segline_f } from "./uniqueValues";
-import QueryExpressionLayers from "query-layers-expression";
+import QueryExpressionLayers from "./qeLayers";
 
 //---------------------------------------------------------//
 //                 Add Layers to Map                      //
@@ -64,7 +64,7 @@ export const makeQuery = (
   qExpression?: string,
   q2Expression?: string,
 ) => {
-  const q = new QueryExpressionLayers();
+  const q = new QueryExpressionLayers({});
   q.qValues = qValues;
   q.qFields = qFields;
   if (qExpression) q.qExpression = qExpression;
