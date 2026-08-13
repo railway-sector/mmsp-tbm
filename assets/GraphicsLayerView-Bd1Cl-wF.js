@@ -1,1 +1,0 @@
-import{cI as i,kZ as e,ya as h}from"./index-BwqLBZ2z.js";function s(t){e(h.getLogger(t),"highlightOptions",{replacement:"View.highlights",version:"4.34",see:"https://arcg.is/inbTa1#highlights",warnOnce:!0})}class g extends i{constructor(){super(...arguments),this.layer=null}get highlightOptions(){return s(this),null}set highlightOptions(n){s(this)}}export{g as s};
