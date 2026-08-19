@@ -14,7 +14,7 @@ import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 import Query from "@arcgis/core/rest/support/Query";
 import * as am5 from "@amcharts/amcharts5";
 import { cp_f, nb_q, sb_q, segline_f } from "./uniqueValues";
-import QueryExpressionLayers from "./qeLayers";
+import QueryExpressionLayers from "query-layers-expression";
 
 //---------------------------------------------------------//
 //                 Add Layers to Map                      //
