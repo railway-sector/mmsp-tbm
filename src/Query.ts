@@ -14,7 +14,6 @@ import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 import Query from "@arcgis/core/rest/support/Query";
 import * as am5 from "@amcharts/amcharts5";
 import { cp_f, nb_q, sb_q, segline_f } from "./uniqueValues";
-import QueryExpressionLayers from "query-layers-expression";
 
 //---------------------------------------------------------//
 //                 Add Layers to Map                      //
@@ -56,21 +55,6 @@ export async function dateUpdate(category: string) {
     return asofdate;
   });
 }
-
-//--- Returns query expression
-export const makeQuery = (
-  qValues: string[],
-  qFields: string[],
-  qExpression?: string,
-  q2Expression?: string,
-) => {
-  const q = new QueryExpressionLayers({});
-  q.qValues = qValues;
-  q.qFields = qFields;
-  if (qExpression) q.qExpression = qExpression;
-  if (q2Expression) q.q2Expression = q2Expression;
-  return q;
-};
 
 //---------------------------------------------------------//
 //    Definition Expression using queryExpression          //

@@ -1,22 +1,20 @@
 import { use } from "react";
 import { MyContext } from "../contexts/MyContext";
-import {
-  fieldStatistic,
-  makeQuery,
-  thousands_separators,
-  zoomToLayer,
-} from "../query";
+import { fieldStatistic, thousands_separators, zoomToLayer } from "../query";
 import { cp_f, labelColor, segline_f, valueColor } from "../uniqueValues";
 import { useQuery } from "@tanstack/react-query";
 import { tbm_tunnel_disolved_layer, tbmTunnelLayer } from "../layers";
+import QueryExpressionLayers from "query-layers-expression";
 
 function ProgressSummary() {
   const { cpackage, segline } = use(MyContext);
   const arcgisScene: any = document.querySelector("arcgis-scene");
 
-  //--- make query
-  const q = makeQuery([cpackage, segline], [cp_f, segline_f]);
-  const qe = q.queryExpression();
+  //--- Query expression
+  const qe = new QueryExpressionLayers({
+    qFields: [cp_f, segline_f],
+    qValues: [cpackage, segline],
+  }).queryExpression();
 
   //--- Calculate statistics
   const { data, isLoading } = useQuery<any>({

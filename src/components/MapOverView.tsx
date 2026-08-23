@@ -24,16 +24,23 @@ import {
   addLayersToMap,
   animatedPointXY,
   disableZooming,
-  makeQuery,
   sf,
   tbmCutterHeadSpotData,
 } from "../query";
 import Query from "@arcgis/core/rest/support/Query";
 import Polyline from "@arcgis/core/geometry/Polyline.js";
 import DirectionLegend from "./DirectionLegend";
+import QueryExpressionLayers from "query-layers-expression";
 
 const MapOverview = () => {
   const { cpackage, segline } = use(MyContext);
+
+  const qe = new QueryExpressionLayers({
+    qFields: [cp_f, segline_f],
+    qValues: [cpackage, segline],
+  }).queryExpression();
+
+  const query = new Query({ where: qe, returnGeometry: true });
 
   useEffect(() => {
     const overviewMap = document.querySelector(
@@ -63,11 +70,6 @@ const MapOverview = () => {
         tbm_tunnel_disolved_layer.load(),
       ]);
 
-      const qe = makeQuery(
-        [cpackage, segline],
-        [cp_f, segline_f],
-      ).queryExpression();
-
       //--- Filter TBM tunnel alignment layers
       tbm_tunnel_disolved_layer.definitionExpression = qe;
       tbmTunnelLayer.definitionExpression = qe;
@@ -76,7 +78,6 @@ const MapOverview = () => {
       if (cancelled) return;
 
       //--- Get the center point of the selected line feature
-      const query = new Query({ where: qe, returnGeometry: true });
       const results = await tbm_tunnel_disolved_layer.queryFeatures(query);
       if (cancelled || results.features.length === 0) return;
 
@@ -97,8 +98,8 @@ const MapOverview = () => {
       overviewMap.view.rotation = getRotationStartOnTop(p1, p2);
       await overviewMap.view.goTo({ target: cLine, zoom });
 
-      //--- 5. Animated CIM symbol
-      await animatedPointXY(qe, tbmTunnelLayer, cimSymbol);
+      //--- 5. Add animated CIM symbol
+      animatedPointXY(qe, tbmTunnelLayer, cimSymbol);
     });
 
     return () => {

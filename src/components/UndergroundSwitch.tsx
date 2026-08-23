@@ -17,8 +17,6 @@ function UndergroundSwitch() {
       style={{
         display: "flex",
         justifyContent: "flex-end", // aligns the group to the left
-        // border: "1px solid #555", // border color/style here
-        // width: "10%", // adjust to fit 9% + 14% + 15% + gaps
         marginLeft: "auto",
         bottom: 0,
         right: "26%",

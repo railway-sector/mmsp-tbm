@@ -1,16 +1,13 @@
 import { useRef, useEffect, use } from "react";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
-import {
-  makeQuery,
-  queryDefinitionExpression,
-  timeSeriesChartData,
-} from "../query";
+import { queryDefinitionExpression, timeSeriesChartData } from "../query";
 import { useQuery } from "@tanstack/react-query";
 import { tbmTunnelLayer } from "../layers";
 import { rootSetter } from "../chartSetter";
 import { MyContext } from "../contexts/MyContext";
 import { cp_f, segline_f } from "../uniqueValues";
+import QueryExpressionLayers from "query-layers-expression";
 
 const ProgressChart = () => {
   const { cpackage, segline } = use(MyContext);
@@ -21,9 +18,11 @@ const ProgressChart = () => {
   const chartRef = useRef<unknown | any | undefined>({});
   const chartID = "progress-bar";
 
-  //--- make query
-  const queryc2 = makeQuery([cpackage, segline], [cp_f, segline_f]);
-  const qe = queryc2.queryExpression();
+  //--- Query expression
+  const qe = new QueryExpressionLayers({
+    qFields: [cp_f, segline_f],
+    qValues: [cpackage, segline],
+  }).queryExpression();
 
   const { data } = useQuery<any>({
     queryKey: [cpackage, segline, tbmTunnelLayer],
