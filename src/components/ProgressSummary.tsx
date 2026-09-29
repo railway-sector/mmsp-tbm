@@ -50,8 +50,8 @@ function ProgressSummary() {
         // border: "1px solid #555", // border color/style here
         width: "400px", // adjust to fit 9% + 14% + 15% + gaps
         marginLeft: "auto",
-        marginTop: 0,
-        marginRight: 10,
+        marginTop: 5,
+        marginRight: 5,
         borderStyle: "solid",
         borderWidth: 0.5,
         borderColor: "#555555",

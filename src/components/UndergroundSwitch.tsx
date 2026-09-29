@@ -14,7 +14,7 @@ function UndergroundSwitch() {
 
   return (
     <div
-      slot="bottom-left"
+      slot="bottom-right"
       style={{
         display: "flex",
         justifyContent: "flex-end",

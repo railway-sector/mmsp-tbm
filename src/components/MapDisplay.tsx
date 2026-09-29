@@ -49,26 +49,29 @@ function MapDisplay() {
   });
 
   return (
-    <arcgis-scene
-      basemap="dark-gray-vector"
-      ground="world-elevation"
-      viewingMode="local"
-      // zoom={13}
-      center="121.0272413487, 14.67923084128"
-      onarcgisViewReadyChange={(event: any) => {
-        setMapView(event.target.id);
-      }}
-    >
-      <arcgis-compass slot="top-left"></arcgis-compass>
-      <arcgis-zoom slot="bottom-left"></arcgis-zoom>
+    <div style={{ display: "flex", height: "100%" }}>
+      <arcgis-scene
+        basemap="dark-gray-vector"
+        ground="world-elevation"
+        viewingMode="local"
+        // zoom={13}
+        center="121.0272413487, 14.67923084128"
+        onarcgisViewReadyChange={(event: any) => {
+          setMapView(event.target.id);
+        }}
+      >
+        <arcgis-compass slot="top-left"></arcgis-compass>
+        <arcgis-zoom slot="bottom-left"></arcgis-zoom>
+        {/* <MapOverview /> */}
+
+        {/* Underground switch */}
+        <UndergroundSwitch />
+
+        {/* Progress Summary Statiatics*/}
+        <ProgressSummary />
+      </arcgis-scene>
       <MapOverview />
-
-      {/* Underground switch */}
-      <UndergroundSwitch />
-
-      {/* Progress Summary Statiatics*/}
-      <ProgressSummary />
-    </arcgis-scene>
+    </div>
   );
 }
 

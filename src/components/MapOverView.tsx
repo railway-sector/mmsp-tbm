@@ -132,7 +132,7 @@ const MapOverview = () => {
         style={{
           fontSize: "0.7rem",
           color: "white",
-          marginTop: 4,
+          marginTop: 5,
           margin: "auto",
           padding: 3,
           backgroundColor: "#2b2b2b",
