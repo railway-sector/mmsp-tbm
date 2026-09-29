@@ -14,13 +14,10 @@ function UndergroundSwitch() {
 
   return (
     <div
+      slot="bottom-left"
       style={{
         display: "flex",
-        justifyContent: "flex-end", // aligns the group to the left
-        // marginLeft: "auto",
-        // bottom: 0,
-        // right: "26%",
-        // position: "fixed",
+        justifyContent: "flex-end",
         margin: 3,
         width: "150px",
       }}
