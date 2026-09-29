@@ -2,7 +2,7 @@ import { use } from "react";
 import { MyContext } from "../contexts/MyContext";
 import { fieldStatistic, thousands_separators, zoomToLayer } from "../query";
 import { cp_f, labelColor, segline_f, valueColor } from "../uniqueValues";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { tbm_tunnel_disolved_layer, tbmTunnelLayer } from "../layers";
 import QueryExpressionLayers from "query-layers-expression";
 
@@ -29,6 +29,7 @@ function ProgressSummary() {
         perc: stats.perc,
       };
     },
+    placeholderData: keepPreviousData,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
