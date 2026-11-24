@@ -1,0 +1,1 @@
+import{JP as u}from"./index-ClgX_Jpc.js";import"./Envelope2D-D_kC6JDG.js";import"./MultiPathImpl-CNHD8T9E.js";import{aq as o}from"./OperatorContains-DOxDLrwL.js";const n=new o;function i(e,t,r){return n.execute(e,t,r,null)}function m(e,t){return n.executeMany(new u(e),t,null).next()}function x(){return n.supportsCurves()}export{i as execute,m as executeMany,x as supportsCurves};

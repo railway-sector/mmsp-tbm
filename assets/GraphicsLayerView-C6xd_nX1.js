@@ -1,0 +1,1 @@
+import{le as s,HX as e,uE as h}from"./index-ClgX_Jpc.js";function i(t){e(h.getLogger(t),"highlightOptions",{replacement:"View.highlights",version:"4.34",see:"https://arcg.is/inbTa1#highlights",warnOnce:!0})}class n extends s{constructor(){super(...arguments),this.layer=null}get highlightOptions(){return i(this),null}set highlightOptions(r){i(this)}}export{n as i};

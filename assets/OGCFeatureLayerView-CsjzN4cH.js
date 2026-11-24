@@ -1,0 +1,1 @@
+import{i_ as a,ja as l,ca as r}from"./index-ClgX_Jpc.js";class s extends r{constructor(){super(...arguments),this.layer=null}get availableFields(){return this.layer.fieldsIndex.fields.map(e=>e.name)}}a([l({readOnly:!0})],s.prototype,"availableFields",null);export{s as r};

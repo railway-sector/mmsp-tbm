@@ -1,0 +1,1 @@
+import{sF as o,nX as a,i_ as i,CO as c}from"./index-ClgX_Jpc.js";import{i as r}from"./InteractiveToolOptions-CRWscMEb.js";var s;let e=s=class extends r{constructor(t){super(t)}static from(t){return o(a(r,t)?s:r,t)}};e=s=i([c("esri.views.interactive.sketch.SketchLabelOptions")],e);export{e as o};

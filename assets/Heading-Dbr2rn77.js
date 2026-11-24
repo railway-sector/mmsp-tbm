@@ -1,0 +1,1 @@
+import{ld as o,EM as s,pt as c,AP as u}from"./index-ClgX_Jpc.js";function h({level:e,class:n,...t},l){let a=r(e),i=`h${a}`;return o(i,{...t,"aria-level":String(a),class:s(c.heading,n),role:"heading"},l)}function r(e){return u(Math.ceil(e),1,6)}function p(e,n=1){return r(e+n)}export{h as i,p as o};

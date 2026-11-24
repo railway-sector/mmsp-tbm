@@ -1,0 +1,1 @@
+import{i_ as r,sJ as s,m5 as t}from"./index-ClgX_Jpc.js";import{l as o}from"./GroupLayerView-DXt2ETla.js";let e=class extends o{constructor(){super(...arguments),this.type="group"}};r([s()],e.prototype,"view",void 0),e=r([t("esri.views.3d.layers.GroupLayerView3D")],e);const p=e;export{p as default};

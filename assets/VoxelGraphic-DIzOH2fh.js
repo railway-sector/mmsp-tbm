@@ -1,0 +1,1 @@
+import{a3 as t,i_ as s,ja as o,CO as a}from"./index-ClgX_Jpc.js";let e=class extends t{constructor(r){super(r),this.gpuResult=null}};s([o({constructOnly:!0,clonable:"reference"})],e.prototype,"gpuResult",void 0),e=s([a("esri.views.3d.layers.VoxelGraphic")],e);export{e as i};

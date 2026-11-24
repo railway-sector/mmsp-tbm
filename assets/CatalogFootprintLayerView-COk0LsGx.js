@@ -1,0 +1,1 @@
+import{i_ as t,ja as s,ca as r}from"./index-ClgX_Jpc.js";class a extends r{constructor(){super(...arguments),this.layer=null}get updateSuspended(){let e=this.parent?.dynamicGroupLayerView;return this.suspended&&(!e||e.suspended===!0)}}t([s()],a.prototype,"updateSuspended",null);export{a as r};

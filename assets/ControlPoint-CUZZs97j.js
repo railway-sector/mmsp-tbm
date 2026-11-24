@@ -1,0 +1,1 @@
+import{xX as e,i_ as t,ja as s,l6 as a,CO as i}from"./index-ClgX_Jpc.js";let o=class extends e{constructor(r){super(r),this.sourcePoint=null,this.mapPoint=null}};t([s()],o.prototype,"sourcePoint",void 0),t([s({type:a})],o.prototype,"mapPoint",void 0),o=t([i("esri.layers.support.ControlPoint")],o);export{o as a};
